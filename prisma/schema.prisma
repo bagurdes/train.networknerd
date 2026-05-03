@@ -1,0 +1,210 @@
+// Network Nerd — data model
+// ----------------------------------------------------------------------------
+// Domain: classes contain users (instructors + students) and reference one
+// course; courses contain ordered modules; modules contain ordered questions;
+// students submit attempts on questions, which Claude grades.
+//
+// The Virtual Class / paid-enrollment seam is intentional but minimal:
+//   Class.isVirtual           — flag for the public catalog (Phase 3)
+//   EnrollmentSource.SELF_ENROLLED — set by the future Stripe webhook
+// Adding payments later does NOT require a schema migration.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----- Enums ----------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
+enum MembershipRole {
+  INSTRUCTOR
+  STUDENT
+}
+
+enum EnrollmentSource {
+  ASSIGNED // Added by an admin or instructor.
+  SELF_ENROLLED // Phase 3: student signed up & paid for a Virtual Class.
+}
+
+enum AttemptVerdict {
+  PENDING
+  CORRECT
+  INCORRECT
+  UNSURE
+}
+
+enum MediaKind {
+  IMAGE
+  GIF
+  VIDEO
+}
+
+// ----- Users ----------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String
+  role          Role      @default(STUDENT)
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  memberships ClassMembership[]
+  attempts    Attempt[]
+  resetTokens PasswordResetToken[]
+
+  @@index([role])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // We store sha-256(token), never the raw token. The raw token only ever
+  // exists in the email link.
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ----- Curriculum: Course → Module → Question ------------------------------
+
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  downloadUrl String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  modules Module[]
+  classes Class[]
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title       String
+  description String   @db.Text
+  // Strict ordering inside a course. Use the (courseId, order) unique index
+  // when re-ordering — typical pattern is to renumber on insert/move.
+  order       Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  questions Question[]
+  media     Media[]
+
+  @@unique([courseId, order])
+  @@index([courseId])
+}
+
+model Question {
+  id            String   @id @default(cuid())
+  moduleId      String
+  module        Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  prompt        String   @db.Text
+  correctAnswer String   @db.Text
+  explanation   String   @db.Text
+  order         Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  attempts Attempt[]
+  media    Media[]
+
+  @@unique([moduleId, order])
+  @@index([moduleId])
+}
+
+// Media is attached to *either* a Module (intro media) or a Question
+// (explanation media), never both. Phase 1 supports pasted URLs only;
+// Phase 2 will add Cloudflare R2 uploads behind the same model.
+model Media {
+  id         String    @id @default(cuid())
+  url        String
+  kind       MediaKind
+  caption    String?
+  moduleId   String?
+  questionId String?
+  module     Module?   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  question   Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+
+  @@index([moduleId])
+  @@index([questionId])
+}
+
+// ----- Classes (offering of a course to a cohort) ---------------------------
+
+model Class {
+  id        String    @id @default(cuid())
+  name      String
+  courseId  String
+  course    Course    @relation(fields: [courseId], references: [id])
+  startDate DateTime
+  // null => no end date (perpetual / self-paced offering)
+  endDate   DateTime?
+  capacity  Int       @default(30)
+  // Phase 3 seam: when true, this class is purchasable from the public catalog.
+  isVirtual Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  memberships ClassMembership[]
+
+  @@index([courseId])
+}
+
+model ClassMembership {
+  id       String           @id @default(cuid())
+  classId  String
+  userId   String
+  role     MembershipRole
+  source   EnrollmentSource @default(ASSIGNED)
+  joinedAt DateTime         @default(now())
+
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, userId])
+  @@index([userId])
+}
+
+// ----- Attempts (graded answers) -------------------------------------------
+
+model Attempt {
+  id            String         @id @default(cuid())
+  userId        String
+  questionId    String
+  studentAnswer String         @db.Text
+  verdict       AttemptVerdict @default(PENDING)
+  // Why Claude returned this verdict — useful for spot-checking grade quality.
+  aiRationale   String?        @db.Text
+  // Which model graded this attempt (e.g., "claude-haiku-4-5-20251001").
+  aiModel       String?
+  gradedAt      DateTime?
+  createdAt     DateTime       @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, questionId])
+  @@index([questionId])
+}
