@@ -2,11 +2,7 @@ import Link from "next/link";
 import type { Role } from "@prisma/client";
 import { logoutAction } from "@/features/auth/actions";
 import { Button } from "@/components/ui/button";
-/**
- * Top bar for authenticated areas. Shows role-aware navigation.
- * The role-specific links are minimal here — each area's layout adds its own
- * sidebar / sub-nav as needed.
- */
+
 export function SiteHeader({
   user,
 }: {
@@ -44,5 +40,30 @@ export function SiteHeader({
     </header>
   );
 }
+
 function RoleNav({ role }: { role: Role }) {
-  const it
+  const items =
+    role === "ADMIN"
+      ? [
+          { href: "/admin", label: "Dashboard" },
+          { href: "/admin/courses", label: "Courses" },
+          { href: "/admin/classes", label: "Classes" },
+          { href: "/admin/users", label: "Users" },
+        ]
+      : role === "INSTRUCTOR"
+        ? [{ href: "/classes", label: "My classes" }]
+        : [{ href: "/dashboard", label: "My classes" }];
+  return (
+    <nav className="hidden items-center gap-4 md:flex">
+      {items.map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          className="text-sm text-muted-foreground hover:text-foreground"
+        >
+          {item.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
