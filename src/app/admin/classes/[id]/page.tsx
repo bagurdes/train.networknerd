@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getClass } from "@/features/classes/service";
 import { listUsers } from "@/features/users/service";
 import { listCourses } from "@/features/courses/service";
-import { Button } from "@/components/ui/button";
+
 import {
   Table,
   TableBody,

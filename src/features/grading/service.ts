@@ -45,7 +45,8 @@ Student's answer: ${input.studentAnswer}`,
       ],
     });
 
-    const text = message.content[0].type === "text" ? message.content[0].text : "";
+    const firstBlock = message.content[0];
+    const text = firstBlock && firstBlock.type === "text" ? firstBlock.text : "";
     const parsed = JSON.parse(text.trim()) as { verdict: string; rationale: string };
     const verdictRaw = (parsed.verdict ?? "unsure").toLowerCase();
     const verdict =
