@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getUser } from "@/features/users/service";
-import { UserForm } from "../new/user-form";
+import { UserForm } from "../../new/user-form";
 
 export const metadata = { title: "Edit User · Admin" };
 

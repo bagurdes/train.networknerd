@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getQuestion } from "@/features/questions/service";
-import { QuestionForm } from "../new/question-form";
+import { QuestionForm } from "../../new/question-form";
 import { DeleteQuestionButton } from "./delete-question-button";
 
 export const metadata = { title: "Edit Question · Admin" };
