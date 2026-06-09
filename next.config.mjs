@@ -2,13 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  experimental: {
-    typedRoutes: true,
-  },
+  typedRoutes: false,
   images: {
     // Phase 2: add R2 / Cloudflare hostname here once media uploads land.
     remotePatterns: [],
   },
 };
-
 export default nextConfig;
