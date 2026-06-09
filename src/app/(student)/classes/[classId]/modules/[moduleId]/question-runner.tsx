@@ -152,7 +152,6 @@ export function QuestionRunner({
 
   const question = questions[current];
   const isLast = current === questions.length - 1;
-
   if (!question) return null;
 
   function handleNext() {
