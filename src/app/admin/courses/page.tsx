@@ -73,6 +73,9 @@ export default async function AdminCoursesListPage() {
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Button asChild size="sm" variant="outline">
+  			<Link href={`/admin/courses/${c.id}`}>Modules</Link>
+			</Button>
+			<Button asChild size="sm" variant="outline">
                         <Link href={`/admin/courses/${c.id}/edit`}>Edit</Link>
                       </Button>
                       <DeleteCourseButton id={c.id} title={c.title} />
