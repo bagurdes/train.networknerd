@@ -47,7 +47,8 @@ Student's answer: ${input.studentAnswer}`,
 
     const firstBlock = message.content[0];
     const text = firstBlock && firstBlock.type === "text" ? firstBlock.text : "";
-    const parsed = JSON.parse(text.trim()) as { verdict: string; rationale: string };
+    const clean = text.trim().replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
+    const parsed = JSON.parse(clean) as { verdict: string; rationale: string };
     const verdictRaw = (parsed.verdict ?? "unsure").toLowerCase();
     const verdict =
       verdictRaw === "correct"
