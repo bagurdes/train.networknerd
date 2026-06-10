@@ -120,6 +120,11 @@ export default async function CourseDetailPage({
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button asChild size="sm" variant="outline">
+  			 <Link href={`/admin/courses/${id}/modules/${mod.id}/questions`}>
+    				Questions ({mod._count.questions})
+  				</Link>
+			</Button>
+			<Button asChild size="sm" variant="outline">
                           <Link
                             href={`/admin/courses/${id}/modules/${mod.id}/questions/new`}
                           >
