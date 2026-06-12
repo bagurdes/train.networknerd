@@ -33,8 +33,8 @@ export default async function EditCoursePage({
         <CardHeader>
           <CardTitle>{course.title}</CardTitle>
           <CardDescription>
-            {course.modules.length} module{course.modules.length === 1 ? "" : "s"}
-            {" · "}
+            {course.courseModules.length} module{course.courseModules.length === 1 ? "" : "s"}
+	    {" · "}
             edit details below. Module &amp; question editing comes next session.
           </CardDescription>
         </CardHeader>

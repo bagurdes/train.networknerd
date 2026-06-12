@@ -33,7 +33,7 @@ export async function getCourse(id: string) {
     include: {
       modules: {
         orderBy: { order: "asc" },
-        select: { id: true, title: true, order: true },
+        select: { id: true, order: true, module: { select: { id: true, title: true } } },
       },
     },
   });
