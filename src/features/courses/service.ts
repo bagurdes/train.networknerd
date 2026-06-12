@@ -31,7 +31,7 @@ export async function getCourse(id: string) {
   const course = await prisma.course.findUnique({
     where: { id },
     include: {
-      modules: {
+      courseModules: {
         orderBy: { order: "asc" },
         select: { id: true, order: true, module: { select: { id: true, title: true } } },
       },
