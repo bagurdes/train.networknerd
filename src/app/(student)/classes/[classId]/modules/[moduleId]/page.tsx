@@ -35,7 +35,7 @@ export default async function StudentModulePage({
 
   const mod = await prisma.module.findUnique({
     where: { id: moduleId },
-    include: { course: { select: { title: true } } },
+    include: { courseModules: { include: { course: { select: { title: true } } } } },
   });
   if (!mod) notFound();
 
@@ -48,7 +48,7 @@ export default async function StudentModulePage({
           <Link href="/dashboard" className="hover:text-foreground">Dashboard</Link>
           <span>/</span>
           <Link href={`/classes/${classId}`} className="hover:text-foreground">
-            {mod.course.title}
+            {mod.courseModules[0]?.course.title ?? "Course"}
           </Link>
           <span>/</span>
           <span>{mod.title}</span>
