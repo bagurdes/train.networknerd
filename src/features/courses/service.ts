@@ -20,7 +20,7 @@ export async function listCourses() {
       downloadUrl: true,
       createdAt: true,
       updatedAt: true,
-      _count: { select: { modules: true, classes: true } },
+      _count: { select: { courseModules: true, classes: true } },
     },
   });
 }
