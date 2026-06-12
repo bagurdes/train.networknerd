@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getModule } from "@/features/modules/service";
-import { ModuleForm } from "../new/module-form";
+import { ModuleForm } from "../../new/module-form";
 
 export const metadata = { title: "Edit Module · Admin" };
 
