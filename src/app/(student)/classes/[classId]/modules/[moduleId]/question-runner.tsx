@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useActionState } from "react";
+import { useActionState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { FormError } from "@/components/ui/form-error";
@@ -34,107 +34,99 @@ function VerdictBadge({ verdict }: { verdict: string }) {
     UNSURE: "? Unsure",
     PENDING: "Pending",
   };
-  const style = styles[verdict] ?? "bg-gray-100 text-gray-600";
-  const label = labels[verdict] ?? verdict;
-
   return (
     <span
-      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${style}`}
+      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${styles[verdict] ?? "bg-gray-100 text-gray-600"}`}
     >
-      {label}
+      {labels[verdict] ?? verdict}
     </span>
   );
 }
 
-function SingleQuestion({
+function QuestionCard({
   question,
+  index,
+  total,
   classId,
   moduleId,
-  onNext,
-  isLast,
 }: {
   question: Question;
+  index: number;
+  total: number;
   classId: string;
   moduleId: string;
-  onNext: () => void;
-  isLast: boolean;
 }) {
   const action = submitAttemptAction.bind(null, question.id, classId, moduleId);
   const [result, formAction] = useActionState(action, initialResult);
 
   const prior = question.attempts[0];
-  const alreadyAnswered = !!prior && !result.ok;
   const justSubmitted = result.ok;
 
   return (
-    <div className="space-y-5">
-      <p className="text-lg leading-relaxed">{question.prompt}</p>
+    <div className="rounded-lg border border-border bg-card overflow-hidden">
+      <div className="flex items-center gap-3 px-6 py-4 border-b border-border bg-muted/30">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
+          {index + 1}
+        </span>
+        <span className="text-xs text-muted-foreground">Question {index + 1} of {total}</span>
+        {prior && !justSubmitted && (
+          <span className="ml-auto"><VerdictBadge verdict={prior.verdict} /></span>
+        )}
+        {justSubmitted && (
+          <span className="ml-auto"><VerdictBadge verdict={result.verdict ?? "UNSURE"} /></span>
+        )}
+      </div>
 
-      {/* Prior attempt */}
-      {alreadyAnswered && (
-        <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">Your previous answer:</p>
-          <p className="text-sm">{prior.studentAnswer}</p>
-          <VerdictBadge verdict={prior.verdict} />
-          {prior.aiRationale && (
-            <p className="text-sm text-muted-foreground">{prior.aiRationale}</p>
-          )}
-          <button
-            className="text-xs text-primary hover:underline pt-1 block"
-            onClick={() => {
-              /* allow re-attempt by showing the form — handled by not setting submitted */
-            }}
-          >
-            Re-attempt below
-          </button>
-        </div>
-      )}
+      <div className="p-6 space-y-5">
+        <p className="text-base leading-relaxed font-medium">{question.prompt}</p>
 
-      {/* Result after submission */}
-      {justSubmitted && (
-        <div className="rounded-lg border border-border bg-card p-5 space-y-3">
-          <VerdictBadge verdict={result.verdict ?? "UNSURE"} />
-          {result.rationale && (
-            <p className="text-sm text-muted-foreground">{result.rationale}</p>
-          )}
-          <div className="pt-2 border-t border-border space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Correct answer
-            </p>
-            <p className="text-sm">{result.correctAnswer}</p>
+        {prior && !justSubmitted && (
+          <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your previous answer</p>
+            <p className="text-sm">{prior.studentAnswer}</p>
+            {prior.aiRationale && (
+              <p className="text-sm text-muted-foreground italic">{prior.aiRationale}</p>
+            )}
+            <div className="pt-2 border-t border-border space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Correct answer</p>
+              <p className="text-sm">{question.correctAnswer}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Explanation</p>
+              <p className="text-sm">{question.explanation}</p>
+            </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Explanation
-            </p>
-            <p className="text-sm">{result.explanation}</p>
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* Answer form — always shown unless just submitted */}
-      {!justSubmitted && (
+        {justSubmitted && (
+          <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
+            {result.rationale && (
+              <p className="text-sm text-muted-foreground italic">{result.rationale}</p>
+            )}
+            <div className="pt-2 border-t border-border space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Correct answer</p>
+              <p className="text-sm">{result.correctAnswer}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Explanation</p>
+              <p className="text-sm">{result.explanation}</p>
+            </div>
+          </div>
+        )}
+
         <form action={formAction} className="space-y-3">
           <Textarea
             name="studentAnswer"
-            rows={5}
-            placeholder="Type your answer here…"
+            rows={4}
+            placeholder={prior ? "Re-attempt — type a new answer…" : "Type your answer here…"}
             required
           />
           <FormError>{result.error}</FormError>
-          <SubmitButton pendingText="Grading…">Submit answer</SubmitButton>
+          <SubmitButton pendingText="Grading…">
+            {prior ? "Re-submit answer" : "Submit answer"}
+          </SubmitButton>
         </form>
-      )}
-
-      {/* Navigation */}
-      {justSubmitted && (
-        <button
-          onClick={onNext}
-          className="text-sm font-medium text-primary hover:underline"
-        >
-          {isLast ? "← Back to modules" : "Next question →"}
-        </button>
-      )}
+      </div>
     </div>
   );
 }
@@ -148,50 +140,25 @@ export function QuestionRunner({
   classId: string;
   moduleId: string;
 }) {
-  const [current, setCurrent] = useState(0);
-
-  const question = questions[current];
-  const isLast = current === questions.length - 1;
-  if (!question) return null;
-
-  function handleNext() {
-    if (isLast) {
-      window.history.back();
-    } else {
-      setCurrent((c) => c + 1);
-    }
-  }
+  const answered = questions.filter((q) => q.attempts.length > 0).length;
 
   return (
     <div className="space-y-6">
-      {/* Progress indicator */}
       <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>
-          Question {current + 1} of {questions.length}
-        </span>
-        <div className="flex gap-1">
-          {questions.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrent(i)}
-              className={`h-2 w-6 rounded-full transition-colors ${
-                i === current ? "bg-primary" : "bg-muted hover:bg-muted-foreground/40"
-              }`}
-            />
-          ))}
-        </div>
+        <span>{questions.length} questions</span>
+        <span>{answered} of {questions.length} answered</span>
       </div>
-
-      {/* Question card */}
-      <div className="rounded-lg border border-border bg-card p-6">
-        <SingleQuestion
-          key={question.id}
-          question={question}
-          classId={classId}
-          moduleId={moduleId}
-          onNext={handleNext}
-          isLast={isLast}
-        />
+      <div className="space-y-6">
+        {questions.map((q, i) => (
+          <QuestionCard
+            key={q.id}
+            question={q}
+            index={i}
+            total={questions.length}
+            classId={classId}
+            moduleId={moduleId}
+          />
+        ))}
       </div>
     </div>
   );
