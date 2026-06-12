@@ -46,7 +46,7 @@ export async function getStudentClasses(userId: string) {
             select: {
               title: true,
               description: true,
-              _count: { select: { modules: true } },
+              _count: { select: { courseModules: true } },
             },
           },
         },

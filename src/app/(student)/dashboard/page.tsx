@@ -37,7 +37,7 @@ export default async function StudentDashboard() {
                 {m.class.course.description}
               </p>
               <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-                <span>{m.class.course._count.modules} modules</span>
+                <span>{m.class.course._count.courseModules} modules</span>
                 <span>Started {formatDateShort(m.class.startDate)}</span>
               </div>
             </Link>
