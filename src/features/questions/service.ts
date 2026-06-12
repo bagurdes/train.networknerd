@@ -20,7 +20,7 @@ export type QuestionListItem = Awaited<ReturnType<typeof listQuestions>>[number]
 export async function getQuestion(id: string) {
   const question = await prisma.question.findUnique({
     where: { id },
-    include: { module: { select: { id: true, title: true, courseId: true } } },
+    include: { module: { select: { id: true, title: true } } },
   });
   if (!question) throw new NotFoundError("Question not found");
   return question;
