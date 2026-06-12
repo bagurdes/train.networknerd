@@ -37,7 +37,7 @@ export default async function QuestionsListPage({
             <Link href="/admin/courses" className="hover:text-foreground">Courses</Link>
             <span>/</span>
             <Link href={`/admin/courses/${courseId}`} className="hover:text-foreground">
-              {mod.course.title}
+              {mod.courseModules[0]?.course.title ?? "Course"}
             </Link>
             <span>/</span>
             <span>{mod.title}</span>

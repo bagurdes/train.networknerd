@@ -62,7 +62,7 @@ export default async function AdminCoursesListPage() {
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {c._count.modules}
+                    {c._count.courseModules}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {c._count.classes}
