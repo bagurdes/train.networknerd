@@ -110,7 +110,6 @@ model CourseModule {
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
   module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
-  @@unique([courseId, moduleId]) // a module can only appear once per course
   @@unique([courseId, order])    // no two modules share the same position in a course
   @@index([moduleId])
   @@index([courseId])
