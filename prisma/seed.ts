@@ -28,14 +28,9 @@ async function main() {
   });
 
   // Assign module to course
-  await prisma.courseModule.upsert({
-    where: { courseId_moduleId: { courseId: course.id, moduleId: module.id } },
-    update: {},
-    create: {
-      courseId: course.id,
-      moduleId: module.id,
-      order: 1,
-    },
+await prisma.courseModule.createMany({
+    data: [{ courseId: course.id, moduleId: module.id, order: 1 }],
+    skipDuplicates: true,
   });
 
   // Create demo questions
