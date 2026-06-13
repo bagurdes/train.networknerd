@@ -106,8 +106,8 @@ export async function assignModuleToCourse(
   moduleId: string,
   order: number,
 ) {
-  const existing = await prisma.courseModule.findUnique({
-    where: { courseId_moduleId: { courseId, moduleId } },
+  const existing = await prisma.courseModule.findFirst({
+    where: { courseId, moduleId },
   });
   if (existing) throw new ConflictError("This module is already in this course");
 
