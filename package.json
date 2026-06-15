@@ -18,8 +18,9 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "first-run-setup": "tsx scripts/first-run-setup.ts",
-    "postinstall": "prisma generate"
-  },
+    "postinstall": "prisma generate",
+    "migrate:old-db": "tsx scripts/migrate-old-db.ts"
+},
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
@@ -33,12 +34,14 @@
     "@radix-ui/react-select": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-toast": "^1.2.2",
+    "@types/pg": "^8.20.0",
     "argon2": "^0.41.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.460.0",
     "next": "^15.5.19",
     "next-auth": "5.0.0-beta.25",
+    "pg": "^8.21.0",
     "react": "19.0.0-rc-66855b96-20241106",
     "react-dom": "19.0.0-rc-66855b96-20241106",
     "react-hook-form": "^7.53.2",
