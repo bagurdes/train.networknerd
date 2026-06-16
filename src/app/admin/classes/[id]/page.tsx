@@ -1,3 +1,4 @@
+import { ResetPasswordButton } from "./reset-password-button";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getClass } from "@/features/classes/service";
@@ -108,9 +109,12 @@ export default async function ClassRosterPage({
                           {MEMBERSHIP_LABELS[m.role] ?? m.role}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right">
+                       <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                        <ResetPasswordButton userId={m.userId} name={m.user.name} />
                         <RemoveMemberButton classId={id} userId={m.userId} name={m.user.name} />
-                      </TableCell>
+                        </div>
+                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

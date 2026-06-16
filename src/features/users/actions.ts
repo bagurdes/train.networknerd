@@ -87,3 +87,20 @@ function toFormState(err: unknown): FormState {
   console.error("[users.actions] Unhandled:", err);
   return { error: "Something went wrong. Please try again." };
 }
+
+export async function adminResetPasswordAction(userId: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await requireRole([Role.ADMIN]);
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, name: true },
+    });
+    if (!user) return { ok: false, error: "User not found" };
+    const { requestPasswordReset } = await import("@/features/auth/service");
+    await requestPasswordReset({ email: user.email });
+    return { ok: true };
+  } catch (err) {
+    console.error("[users.actions] adminResetPassword:", err);
+    return { ok: false, error: "Failed to send reset email." };
+  }
+}
