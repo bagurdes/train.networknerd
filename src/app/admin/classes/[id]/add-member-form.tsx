@@ -1,78 +1,89 @@
 "use client";
 
 import { useActionState } from "react";
-import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { FormError } from "@/components/ui/form-error";
-import { addMemberAction, type FormState } from "@/features/classes/actions";
+import { addMembersAction, type FormState } from "@/features/classes/actions";
 
 interface User {
   id: string;
   name: string;
   email: string;
+  role: string;
+  alreadyEnrolled: boolean;
 }
 
 const initialState: FormState = {};
 
-export function AddMemberForm({
+export function AddMembersForm({
   classId,
   users,
 }: {
   classId: string;
   users: User[];
 }) {
-  const action = addMemberAction.bind(null, classId);
+  const action = addMembersAction.bind(null, classId);
   const [state, formAction] = useActionState(action, initialState);
 
-  if (users.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        All users are already members of this class.
-      </p>
-    );
-  }
+  const available = users.filter((u) => !u.alreadyEnrolled);
+  const enrolled = users.filter((u) => u.alreadyEnrolled);
 
   return (
     <form action={formAction} className="space-y-3">
-      <div className="space-y-1.5">
-        <Label htmlFor="userId">User</Label>
-        <select
-          id="userId"
-          name="userId"
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          required
-        >
-          <option value="">Select a user…</option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.name} ({u.email})
-            </option>
-          ))}
-        </select>
-        <FormError>{state.fieldErrors?.userId?.[0]}</FormError>
-      </div>
+      <div className="space-y-1">
+        {users.length === 0 && (
+          <p className="text-sm text-muted-foreground">No users available.</p>
+        )}
 
-      <div className="space-y-1.5">
-        <Label htmlFor="role">Role in class</Label>
-        <select
-          id="role"
-          name="role"
-          defaultValue="STUDENT"
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          required
-        >
-          <option value="STUDENT">Student</option>
-          <option value="INSTRUCTOR">Instructor</option>
-        </select>
-        <FormError>{state.fieldErrors?.role?.[0]}</FormError>
+        {enrolled.map((u) => (
+          <label
+            key={u.id}
+            className="flex items-center gap-3 rounded-md px-2 py-1.5 opacity-50 cursor-not-allowed"
+          >
+            <input
+              type="checkbox"
+              checked
+              disabled
+              className="h-4 w-4 rounded border-border"
+            />
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-medium">{u.name}</span>
+              <span className="text-xs text-muted-foreground ml-2">{u.email}</span>
+            </div>
+            <span className="text-xs text-muted-foreground shrink-0">enrolled</span>
+          </label>
+        ))}
+
+        {available.map((u) => (
+          <label
+            key={u.id}
+            className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              name="userIds"
+              value={u.id}
+              className="h-4 w-4 rounded border-border"
+            />
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-medium">{u.name}</span>
+              <span className="text-xs text-muted-foreground ml-2">{u.email}</span>
+            </div>
+            <span className="text-xs text-muted-foreground shrink-0">{u.role.toLowerCase()}</span>
+          </label>
+        ))}
       </div>
 
       {state.ok && (
-        <p className="text-sm text-green-600">Member added successfully.</p>
+        <p className="text-sm text-green-600">
+          {state.error ?? "Members added successfully."}
+        </p>
       )}
-      <FormError>{state.error}</FormError>
+      {!state.ok && <FormError>{state.error}</FormError>}
 
-      <SubmitButton pendingText="Adding…">Add to class</SubmitButton>
+      {available.length > 0 && (
+        <SubmitButton pendingText="Adding…">Add selected as students</SubmitButton>
+      )}
     </form>
   );
 }

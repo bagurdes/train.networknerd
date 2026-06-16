@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { formatDateShort } from "@/lib/utils";
 import { DeleteUserButton } from "./delete-user-button";
+import { VerifyUserButton } from "./verify-user-button";
 
 export const metadata = { title: "Users · Admin" };
 
@@ -51,6 +52,7 @@ export default async function AdminUsersPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Verified</TableHead>
                 <TableHead className="hidden md:table-cell">Classes</TableHead>
                 <TableHead className="hidden lg:table-cell">Joined</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -65,6 +67,9 @@ export default async function AdminUsersPage() {
                     <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted">
                       {ROLE_LABELS[u.role] ?? u.role}
                     </span>
+                  </TableCell>
+                  <TableCell>
+                    <VerifyUserButton id={u.id} verified={!!u.emailVerified} />
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {u._count.memberships}

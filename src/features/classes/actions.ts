@@ -3,11 +3,12 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { ZodError } from "zod";
-import { Role } from "@prisma/client";
+import { Role, MembershipRole } from "@prisma/client";
 import { requireRole } from "@/lib/authorize";
 import { AppError } from "@/lib/errors";
 import { createClassSchema, updateClassSchema, addMemberSchema } from "./schema";
 import { addMember, createClass, deleteClass, removeMember, updateClass } from "./service";
+import { prisma } from "@/lib/prisma";
 
 export interface FormState {
   ok?: boolean;
@@ -80,6 +81,57 @@ export async function addMemberAction(
     await addMember(classId, input);
     revalidatePath(`/admin/classes/${classId}`);
     return { ok: true };
+  } catch (err) {
+    return toFormState(err);
+  }
+}
+
+// Bulk add multiple users to a class as students
+export async function addMembersAction(
+  classId: string,
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  try {
+    await requireRole([Role.ADMIN, Role.INSTRUCTOR]);
+    const userIds = formData.getAll("userIds") as string[];
+
+    if (userIds.length === 0) {
+      return { error: "Please select at least one user." };
+    }
+
+    // Check capacity
+    const cls = await prisma.class.findUnique({
+      where: { id: classId },
+      include: {
+        _count: { select: { memberships: { where: { role: "STUDENT" } } } },
+      },
+    });
+    if (!cls) return { error: "Class not found." };
+
+    const currentStudents = cls._count.memberships;
+    if (currentStudents + userIds.length > cls.capacity) {
+      return {
+        error: `Adding ${userIds.length} student(s) would exceed the class capacity of ${cls.capacity}. Currently ${currentStudents} enrolled.`,
+      };
+    }
+
+    // Add each user, skipping any already enrolled
+    let added = 0;
+    for (const userId of userIds) {
+      const existing = await prisma.classMembership.findUnique({
+        where: { classId_userId: { classId, userId } },
+      });
+      if (!existing) {
+        await prisma.classMembership.create({
+          data: { classId, userId, role: MembershipRole.STUDENT },
+        });
+        added++;
+      }
+    }
+
+    revalidatePath(`/admin/classes/${classId}`);
+    return { ok: true, error: added < userIds.length ? `${added} added (some were already enrolled).` : undefined };
   } catch (err) {
     return toFormState(err);
   }

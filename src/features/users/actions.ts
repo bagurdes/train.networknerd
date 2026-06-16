@@ -6,6 +6,7 @@ import { ZodError } from "zod";
 import { Role } from "@prisma/client";
 import { requireRole } from "@/lib/authorize";
 import { AppError } from "@/lib/errors";
+import { prisma } from "@/lib/prisma";
 import { createUserSchema, updateUserSchema } from "./schema";
 import { createUser, deleteUser, updateUser } from "./service";
 
@@ -59,6 +60,24 @@ export async function deleteUserAction(id: string): Promise<void> {
   await deleteUser(id);
   revalidatePath("/admin/users");
   redirect("/admin/users");
+}
+
+export async function verifyUserAction(id: string): Promise<void> {
+  await requireRole([Role.ADMIN]);
+  await prisma.user.update({
+    where: { id },
+    data: { emailVerified: new Date() },
+  });
+  revalidatePath("/admin/users");
+}
+
+export async function unverifyUserAction(id: string): Promise<void> {
+  await requireRole([Role.ADMIN]);
+  await prisma.user.update({
+    where: { id },
+    data: { emailVerified: null },
+  });
+  revalidatePath("/admin/users");
 }
 
 function toFormState(err: unknown): FormState {

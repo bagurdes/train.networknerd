@@ -11,6 +11,7 @@ export async function listUsers() {
       name: true,
       email: true,
       role: true,
+      emailVerified: true,
       createdAt: true,
       _count: { select: { memberships: true } },
     },
@@ -32,12 +33,14 @@ export async function createUser(input: CreateUserInput) {
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
   if (existing) throw new ConflictError("A user with that email already exists");
   const passwordHash = await hashPassword(input.password);
+  // Admin-created users are pre-verified
   return prisma.user.create({
     data: {
       name: input.name,
       email: input.email,
       passwordHash,
       role: input.role,
+      emailVerified: new Date(),
     },
     select: { id: true },
   });

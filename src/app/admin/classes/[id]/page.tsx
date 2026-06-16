@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { getClass } from "@/features/classes/service";
 import { listUsers } from "@/features/users/service";
 import { listCourses } from "@/features/courses/service";
-
 import {
   Table,
   TableBody,
@@ -15,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { formatDateShort } from "@/lib/utils";
 import { ClassForm } from "../new/class-form";
-import { AddMemberForm } from "./add-member-form";
+import { AddMembersForm } from "./add-member-form";
 import { RemoveMemberButton } from "./remove-member-button";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -49,9 +48,19 @@ export default async function ClassRosterPage({
 
   const [allUsers, courses] = await Promise.all([listUsers(), listCourses()]);
 
-  // Users not already in the class
-  const memberIds = new Set(cls.memberships.map((m) => m.userId));
-  const availableUsers = allUsers.filter((u) => !memberIds.has(u.id));
+  // Build enrolled set
+  const enrolledUserIds = new Set(cls.memberships.map((m) => m.userId));
+
+  // All users with enrollment status attached
+  const usersWithStatus = allUsers.map((u) => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    alreadyEnrolled: enrolledUserIds.has(u.id),
+  }));
+
+  const studentCount = cls.memberships.filter((m) => m.role === "STUDENT").length;
 
   return (
     <div className="space-y-8">
@@ -66,7 +75,7 @@ export default async function ClassRosterPage({
         <p className="text-muted-foreground">
           Course: {cls.course.title} &middot; Start: {formatDateShort(cls.startDate)}
           {cls.endDate ? ` · End: ${formatDateShort(cls.endDate)}` : " · No end date"}
-          {" "}· Capacity: {cls.memberships.filter((m) => m.role === "STUDENT").length} / {cls.capacity} students
+          {" "}· Students: {studentCount} / {cls.capacity}
         </p>
       </div>
 
@@ -76,7 +85,7 @@ export default async function ClassRosterPage({
           <h2 className="text-lg font-semibold">Roster</h2>
           {cls.memberships.length === 0 ? (
             <TableEmpty>
-              <p>No members yet. Add students and instructors using the form.</p>
+              <p>No members yet. Add students using the form.</p>
             </TableEmpty>
           ) : (
             <div className="rounded-lg border border-border bg-card">
@@ -110,13 +119,20 @@ export default async function ClassRosterPage({
           )}
         </div>
 
-        {/* Add member + edit class */}
+        {/* Sidebar */}
         <div className="space-y-6">
+          {/* Add members */}
           <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-            <h2 className="font-semibold">Add member</h2>
-            <AddMemberForm classId={id} users={availableUsers} />
+            <div>
+              <h2 className="font-semibold">Add members</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Already enrolled users are shown but cannot be selected.
+              </p>
+            </div>
+            <AddMembersForm classId={id} users={usersWithStatus} />
           </div>
 
+          {/* Edit class */}
           <div className="rounded-lg border border-border bg-card p-4 space-y-3">
             <h2 className="font-semibold">Edit class</h2>
             <ClassForm
