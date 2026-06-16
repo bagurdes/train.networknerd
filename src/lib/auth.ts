@@ -5,14 +5,6 @@ import { authConfig } from "./auth.config";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/features/auth/hash";
 
-/**
- * Full Auth.js config (Node runtime).
- *
- * Imported only by route handlers, server components, and server actions —
- * never by middleware. The Credentials provider hits Postgres and uses
- * argon2 for verification, both of which require Node.
- */
-
 const credentialsSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
@@ -45,7 +37,12 @@ export const {
         const ok = await verifyPassword(password, user.passwordHash);
         if (!ok) return null;
 
-        // Return value becomes `user` arg of the jwt callback.
+        // Block login for unverified email addresses.
+        // Admin and Instructor accounts created by an admin are pre-verified
+        // (their emailVerified is set by the verify-existing-users script).
+        // Only self-registered students who haven't clicked their link are blocked.
+        if (!user.emailVerified) return null;
+
         return {
           id: user.id,
           email: user.email,

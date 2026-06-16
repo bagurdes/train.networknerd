@@ -19,7 +19,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "first-run-setup": "tsx scripts/first-run-setup.ts",
     "postinstall": "prisma generate",
-    "migrate:old-db": "tsx scripts/migrate-old-db.ts"
+    "migrate:old-db": "tsx scripts/migrate-old-db.ts",
+    "verify-existing-users": "tsx scripts/verify-existing-users.ts"
 },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

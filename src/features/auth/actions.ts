@@ -30,9 +30,9 @@ import {
 export interface FormState {
   ok?: boolean;
   error?: string;
+  email?: string;
   fieldErrors?: Record<string, string[] | undefined>;
 }
-
 const empty: FormState = {};
 
 // ---- Register --------------------------------------------------------------
@@ -47,14 +47,8 @@ export async function registerAction(
       email: formData.get("email"),
       password: formData.get("password"),
     });
-    await registerStudent(input);
-    // Auto-login on successful registration.
-    await signIn("credentials", {
-      email: input.email,
-      password: input.password,
-      redirectTo: "/dashboard",
-    });
-    return { ok: true };
+    const user = await registerStudent(input);
+    return { ok: true, email: user.email };
   } catch (err) {
     return toFormState(err);
   }

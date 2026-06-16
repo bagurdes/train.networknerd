@@ -1,4 +1,5 @@
 "use client";
+
 import { useActionState, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +23,23 @@ export function RegisterForm() {
     } else {
       setConfirmError("");
     }
+  }
+
+  // Show success state after registration
+  if (state.ok) {
+    return (
+      <div className="space-y-4 text-center py-4">
+        <div className="text-4xl">📬</div>
+        <h2 className="text-lg font-semibold">Check your email</h2>
+        <p className="text-sm text-muted-foreground">
+          We sent a verification link to <strong>{state.email}</strong>.
+          Click the link to activate your account.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          The link expires in 24 hours. Check your spam folder if you don&apos;t see it.
+        </p>
+      </div>
+    );
   }
 
   return (

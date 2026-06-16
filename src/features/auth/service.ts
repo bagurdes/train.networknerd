@@ -2,7 +2,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
-import { sendPasswordResetEmail } from "@/lib/email";
+import { sendPasswordResetEmail, sendVerificationEmail } from "@/lib/email";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 import { hashPassword } from "./hash";
 import type {
@@ -11,30 +11,23 @@ import type {
   RequestResetInput,
 } from "./schema";
 
-/**
- * Auth service — pure business logic, no HTTP, no UI.
- *
- * Server actions and route handlers wrap these functions; tests call them
- * directly.
- */
-
-const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;        // 30 minutes
+const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;  // 24 hours
 
 // ---------------------------------------------------------------------------
 // Registration
 // ---------------------------------------------------------------------------
 
 /**
- * Register a new student account. Self-service signup is for STUDENT only —
- * Admin and Instructor accounts are provisioned by an existing Admin.
+ * Register a new student account. Creates the user with emailVerified = null
+ * and sends a verification email. The account cannot be used until the link
+ * in the email is clicked.
  */
 export async function registerStudent(input: RegisterInput) {
   const existing = await prisma.user.findUnique({
     where: { email: input.email },
   });
   if (existing) {
-    // Don't leak which emails exist, but for self-registration we do tell the
-    // user the address is taken — they would discover it on the next step.
     throw new ConflictError("An account with that email already exists");
   }
 
@@ -46,39 +39,77 @@ export async function registerStudent(input: RegisterInput) {
       email: input.email,
       passwordHash,
       role: Role.STUDENT,
+      // emailVerified intentionally left null until they click the link
     },
     select: { id: true, email: true, name: true, role: true },
   });
 
+  // Generate verification token
+  const token = randomBytes(32).toString("base64url");
+  const tokenHash = sha256(token);
+  const expiresAt = new Date(Date.now() + VERIFY_TOKEN_TTL_MS);
+
+  await prisma.emailVerificationToken.create({
+    data: { userId: user.id, tokenHash, expiresAt },
+  });
+
+  const verifyUrl = `${env.NEXTAUTH_URL.replace(/\/$/, "")}/verify-email/${token}`;
+  await sendVerificationEmail({ to: user.email, name: user.name, verifyUrl });
+
   return user;
+}
+
+// ---------------------------------------------------------------------------
+// Email verification
+// ---------------------------------------------------------------------------
+
+/**
+ * Verify an email address using the token from the verification link.
+ * Sets emailVerified and deletes the token.
+ */
+export async function verifyEmail(token: string): Promise<{ name: string; email: string }> {
+  const tokenHash = sha256(token);
+  const record = await prisma.emailVerificationToken.findUnique({
+    where: { tokenHash },
+    include: { user: true },
+  });
+
+  if (!record || record.usedAt) {
+    throw new ValidationError("This verification link is invalid or has already been used");
+  }
+  if (record.expiresAt.getTime() < Date.now()) {
+    throw new ValidationError("This verification link has expired. Please register again.");
+  }
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: record.userId },
+      data: { emailVerified: new Date() },
+    }),
+    prisma.emailVerificationToken.update({
+      where: { id: record.id },
+      data: { usedAt: new Date() },
+    }),
+  ]);
+
+  return { name: record.user.name, email: record.user.email };
 }
 
 // ---------------------------------------------------------------------------
 // Password reset
 // ---------------------------------------------------------------------------
 
-/**
- * Start a password reset. Always succeeds from the caller's POV — we don't
- * leak whether the email is registered. If the user exists, we email them a
- * single-use, time-limited reset link.
- */
 export async function requestPasswordReset(input: RequestResetInput): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { email: input.email },
   });
 
-  if (!user) {
-    // Silent success — same response as the happy path.
-    return;
-  }
+  if (!user) return;
 
-  // Generate a 32-byte URL-safe token; only the hash lives in the DB.
   const token = randomBytes(32).toString("base64url");
   const tokenHash = sha256(token);
   const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
 
-  // Invalidate any unused tokens for this user before issuing a fresh one —
-  // older request emails should stop working the moment a newer one is sent.
   await prisma.$transaction([
     prisma.passwordResetToken.updateMany({
       where: { userId: user.id, usedAt: null },
@@ -93,10 +124,6 @@ export async function requestPasswordReset(input: RequestResetInput): Promise<vo
   await sendPasswordResetEmail({ to: user.email, name: user.name, resetUrl });
 }
 
-/**
- * Complete a password reset. Validates the token, replaces the password hash,
- * marks the token used, and invalidates any sibling unused tokens for safety.
- */
 export async function confirmPasswordReset(input: ConfirmResetInput): Promise<void> {
   const tokenHash = sha256(input.token);
   const record = await prisma.passwordResetToken.findUnique({
@@ -122,7 +149,6 @@ export async function confirmPasswordReset(input: ConfirmResetInput): Promise<vo
       where: { id: record.id },
       data: { usedAt: new Date() },
     }),
-    // Burn any other outstanding tokens for this user.
     prisma.passwordResetToken.updateMany({
       where: { userId: record.userId, usedAt: null },
       data: { usedAt: new Date() },
