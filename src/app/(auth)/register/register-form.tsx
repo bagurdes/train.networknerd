@@ -64,7 +64,8 @@ export function RegisterForm() {
           minLength={10}
           required
         />
-        <p className="text-xs text-muted-foreground">At least 10 characters.</p>
+        <p className="text-xs text-muted-foreground">At least 10 characters, including one uppercase letter, one number, and one special character.
+.</p>
         <FormError>{state.fieldErrors?.password?.[0]}</FormError>
       </div>
       <div className="space-y-1.5">
