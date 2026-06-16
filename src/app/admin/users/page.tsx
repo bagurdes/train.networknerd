@@ -1,3 +1,4 @@
+import { ResetPasswordButton } from "./reset-password-button";
 import Link from "next/link";
 import { listUsers } from "@/features/users/service";
 import { Button } from "@/components/ui/button";
@@ -79,6 +80,7 @@ export default async function AdminUsersPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
+                      <ResetPasswordButton userId={u.id} name={u.name} />
                       <Button asChild size="sm" variant="outline">
                         <Link href={`/admin/users/${u.id}/edit`}>Edit</Link>
                       </Button>
