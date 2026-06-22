@@ -148,6 +148,7 @@ model Question {
   prompt        String   @db.Text
   correctAnswer String   @db.Text
   explanation   String   @db.Text
+  hint          String?  @db.Text
   order         Int
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

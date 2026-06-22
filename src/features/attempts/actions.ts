@@ -13,6 +13,7 @@ export interface AttemptResult {
   rationale?: string;
   correctAnswer?: string;
   explanation?: string;
+  studentAnswer?: string;
 }
 
 export async function submitAttemptAction(
@@ -40,6 +41,7 @@ export async function submitAttemptAction(
       rationale: attempt.aiRationale ?? undefined,
       correctAnswer: question.correctAnswer,
       explanation: question.explanation,
+      studentAnswer,
     };
   } catch (err) {
     if (err instanceof AppError) return { ok: false, error: err.message };

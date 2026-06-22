@@ -51,6 +51,7 @@ export async function createQuestion(moduleId: string, input: CreateQuestionInpu
       prompt: input.prompt,
       correctAnswer: input.correctAnswer,
       explanation: input.explanation,
+      hint: input.hint ?? "",
       order: input.order,
     },
     select: { id: true },
@@ -64,6 +65,7 @@ export async function updateQuestion(id: string, input: UpdateQuestionInput) {
       prompt: input.prompt,
       correctAnswer: input.correctAnswer,
       explanation: input.explanation,
+      hint: input.hint ?? "",
       order: input.order,
     },
   });

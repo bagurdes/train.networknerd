@@ -100,6 +100,10 @@ function QuestionCard({
 
         {justSubmitted && (
           <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your answer</p>
+              <p className="text-sm">{result.studentAnswer}</p>
+            </div>
             {result.rationale && (
               <p className="text-sm text-muted-foreground italic">{result.rationale}</p>
             )}

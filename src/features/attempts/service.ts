@@ -68,6 +68,7 @@ export async function getModuleProgress(userId: string, moduleId: string) {
       prompt: true,
       correctAnswer: true,
       explanation: true,
+      hint: true,
       order: true,
       attempts: {
         where: { userId },
