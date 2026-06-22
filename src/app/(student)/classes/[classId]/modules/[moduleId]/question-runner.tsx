@@ -83,7 +83,7 @@ function QuestionCard({
         <p className="text-base leading-relaxed font-medium">{question.prompt}</p>
 
         {/* Hint — only shown before submission, only if hint exists */}
-        {!justSubmitted && question.hint && (
+        {question.hint && (
           <div>
             <button
               type="button"
