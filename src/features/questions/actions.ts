@@ -31,8 +31,8 @@ export async function createQuestionAction(
       order: formData.get("order") || String(nextOrder),
     });
     await createQuestion(moduleId, input);
-    revalidatePath(`/admin/courses/${courseId}`);
-    redirect(`/admin/courses/${courseId}`);
+    revalidatePath(`/admin/courses/${courseId}/modules/${moduleId}/questions`);
+    redirect(`/admin/courses/${courseId}/modules/${moduleId}/questions`);
   } catch (err) {
     return toFormState(err);
   }
@@ -54,8 +54,8 @@ export async function updateQuestionAction(
       order: formData.get("order"),
     });
     await updateQuestion(id, input);
-    revalidatePath(`/admin/courses/${courseId}`);
-    redirect(`/admin/courses/${courseId}`);
+    revalidatePath(`/admin/courses/${courseId}/modules/${moduleId}/questions`);
+    redirect(`/admin/courses/${courseId}/modules/${moduleId}/questions`);
   } catch (err) {
     return toFormState(err);
   }
@@ -68,8 +68,8 @@ export async function deleteQuestionAction(
 ): Promise<void> {
   await requireRole([Role.ADMIN]);
   await deleteQuestion(id);
-  revalidatePath(`/admin/courses/${courseId}`);
-  redirect(`/admin/courses/${courseId}`);
+  revalidatePath(`/admin/courses/${courseId}/modules/${moduleId}/questions`);
+  redirect(`/admin/courses/${courseId}/modules/${moduleId}/questions`);
 }
 
 function toFormState(err: unknown): FormState {
