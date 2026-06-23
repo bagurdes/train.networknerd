@@ -89,7 +89,6 @@ export function QuestionForm(props: Props) {
           rows={4}
           defaultValue={iv?.explanation ?? ""}
           placeholder="SYN stands for synchronize. When a client wants to connect…"
-          required
         />
         <p className="text-xs text-muted-foreground">
           Shown to students after they submit their answer.

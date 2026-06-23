@@ -18,7 +18,7 @@ export async function submitAttempt(
   const result = await gradeAnswer({
     prompt: question.prompt,
     correctAnswer: question.correctAnswer,
-    explanation: question.explanation,
+    explanation: question.explanation ?? undefined,
     studentAnswer,
   });
 

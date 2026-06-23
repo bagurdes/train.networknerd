@@ -4,7 +4,7 @@ import { env } from "@/lib/env";
 interface GradeInput {
   prompt: string;
   correctAnswer: string;
-  explanation: string;
+  explanation?: string;
   studentAnswer: string;
 }
 
@@ -36,9 +36,7 @@ Respond with JSON only. No markdown, no backticks, no preamble.`,
           role: "user",
           content: `Question: ${input.prompt}
 
-Correct answer: ${input.correctAnswer}
-
-Explanation: ${input.explanation}
+Correct answer: ${input.correctAnswer}${input.explanation ? `\n\nExplanation: ${input.explanation}` : ""}
 
 Student's answer: ${input.studentAnswer}`,
         },
