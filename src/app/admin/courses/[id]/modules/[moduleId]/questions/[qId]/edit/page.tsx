@@ -47,6 +47,7 @@ export default async function EditQuestionPage({
             prompt: question.prompt,
             correctAnswer: question.correctAnswer,
             explanation: question.explanation,
+            hint: question.hint ?? "",
             order: question.order,
           }}
         />

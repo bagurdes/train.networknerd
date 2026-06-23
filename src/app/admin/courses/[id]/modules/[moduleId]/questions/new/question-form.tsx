@@ -16,6 +16,7 @@ interface QuestionFormValues {
   prompt: string;
   correctAnswer: string;
   explanation: string;
+  hint: string;
   order: number;
 }
 
@@ -79,6 +80,21 @@ export function QuestionForm(props: Props) {
           The reference answer Claude uses when grading student responses.
         </p>
         <FormError>{state.fieldErrors?.correctAnswer?.[0]}</FormError>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="hint">Hint (optional)</Label>
+        <Textarea
+          id="hint"
+          name="hint"
+          rows={2}
+          defaultValue={iv?.hint ?? ""}
+          placeholder="Look in the Packet Details pane…"
+        />
+        <p className="text-xs text-muted-foreground">
+          Shown to students before they submit if they ask for a hint.
+        </p>
+        <FormError>{state.fieldErrors?.hint?.[0]}</FormError>
       </div>
 
       <div className="space-y-1.5">
