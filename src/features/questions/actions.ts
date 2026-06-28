@@ -28,6 +28,7 @@ export async function createQuestionAction(
       prompt: formData.get("prompt"),
       correctAnswer: formData.get("correctAnswer"),
       explanation: formData.get("explanation"),
+      hint: formData.get("hint"),
       order: formData.get("order") || String(nextOrder),
     });
     await createQuestion(moduleId, input);
@@ -51,6 +52,7 @@ export async function updateQuestionAction(
       prompt: formData.get("prompt"),
       correctAnswer: formData.get("correctAnswer"),
       explanation: formData.get("explanation"),
+      hint: formData.get("hint"),
       order: formData.get("order"),
     });
     await updateQuestion(id, input);
