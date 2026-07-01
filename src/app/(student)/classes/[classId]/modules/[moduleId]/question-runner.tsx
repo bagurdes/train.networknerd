@@ -80,7 +80,7 @@ function QuestionCard({
 
       <div className="p-6 space-y-5">
         {/* Question text */}
-        <p className="text-base leading-relaxed font-medium">{question.prompt}</p>
+        <p className="text-base leading-relaxed font-medium whitespace-pre-wrap">{question.prompt}</p>
 
         {/* Hint — only shown before submission, only if hint exists */}
         {question.hint && (
@@ -106,7 +106,7 @@ function QuestionCard({
           <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
             <div className="space-y-1">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your previous answer</p>
-              <p className="text-sm">{prior.studentAnswer}</p>
+              <p className="text-sm whitespace-pre-wrap">{prior.studentAnswer}</p>
             </div>
             {prior.aiRationale && (
               <div className="space-y-1">
@@ -116,12 +116,12 @@ function QuestionCard({
             )}
             <div className="pt-2 border-t border-border space-y-1">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Correct answer</p>
-              <p className="text-sm">{question.correctAnswer}</p>
+              <p className="text-sm whitespace-pre-wrap">{question.correctAnswer}</p>
             </div>
             {question.explanation && (
               <div className="space-y-1">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Explanation</p>
-                <p className="text-sm">{question.explanation}</p>
+                <p className="text-sm whitespace-pre-wrap">{question.explanation}</p>
               </div>
             )}
           </div>
@@ -132,7 +132,7 @@ function QuestionCard({
           <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
             <div className="space-y-1">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your answer</p>
-              <p className="text-sm">{result.studentAnswer}</p>
+              <p className="text-sm whitespace-pre-wrap">{result.studentAnswer}</p>
             </div>
             {result.rationale && (
               <div className="space-y-1">
@@ -142,12 +142,12 @@ function QuestionCard({
             )}
             <div className="pt-2 border-t border-border space-y-1">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Correct answer</p>
-              <p className="text-sm">{result.correctAnswer}</p>
+              <p className="text-sm whitespace-pre-wrap">{result.correctAnswer}</p>
             </div>
             {result.explanation && (
               <div className="space-y-1">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Explanation</p>
-                <p className="text-sm">{result.explanation}</p>
+                <p className="text-sm whitespace-pre-wrap">{result.explanation}</p>
               </div>
             )}
           </div>
