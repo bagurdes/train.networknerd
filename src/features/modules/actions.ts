@@ -34,6 +34,7 @@ export async function createModuleAction(
       title: formData.get("title"),
       description: formData.get("description"),
       order: formData.get("order") || String(nextOrder),
+      isPublic: formData.get("isPublic") === "true",
     });
     await createModule(courseId, input);
     revalidatePath(`/admin/courses/${courseId}`);
@@ -80,6 +81,7 @@ export async function updateModuleAction(
     const input = updateModuleSchema.parse({
       title: formData.get("title"),
       description: formData.get("description"),
+      isPublic: formData.get("isPublic") === "true",
     });
     await updateModule(id, input);
     revalidatePath(`/admin/courses/${courseId}`);

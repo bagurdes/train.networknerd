@@ -89,6 +89,7 @@ export async function createModule(courseId: string, input: CreateModuleInput) {
     data: {
       title: input.title,
       description: input.description,
+      isPublic: input.isPublic,
     },
     select: { id: true },
   });
@@ -128,7 +129,7 @@ export async function unassignModuleFromCourse(courseId: string, moduleId: strin
 export async function updateModule(id: string, input: UpdateModuleInput) {
   const result = await prisma.module.updateMany({
     where: { id },
-    data: { title: input.title, description: input.description },
+    data: { title: input.title, description: input.description, isPublic: input.isPublic },
   });
   if (result.count === 0) throw new NotFoundError("Module not found");
 }

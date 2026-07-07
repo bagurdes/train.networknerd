@@ -39,8 +39,22 @@ export function ModuleForm(props: Props) {
       <div className="space-y-1.5">
         <Label htmlFor="title">Title</Label>
         <Input id="title" name="title" defaultValue={defaultTitle} required />
+        </div>
+
+       <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="isPublic"
+          name="isPublic"
+          value="true"
+          defaultChecked={props.mode === "edit" ? props.initialValues.isPublic : false}
+          className="h-4 w-4 rounded border-border"
+        />
+        <Label htmlFor="isPublic">Public demo module (accessible without login at /demo/[id])</Label>
+       </div>
+
         <FormError>{state.fieldErrors?.title?.[0]}</FormError>
-      </div>
+        </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="description">Description</Label>
