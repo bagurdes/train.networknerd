@@ -15,6 +15,7 @@ import {
 interface ModuleFormValues {
   title: string;
   description: string;
+  isPublic: boolean;
 }
 
 const initialState: FormState = {};

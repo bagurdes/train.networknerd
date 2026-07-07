@@ -51,6 +51,7 @@ export default async function EditModulePage({
           initialValues={{
             title: mod.title,
             description: mod.description,
+            isPublic: mod.isPublic,
           }}
         />
       </div>
