@@ -52,6 +52,7 @@ export default async function EditModulePage({
             title: mod.title,
             description: mod.description,
             isPublic: mod.isPublic,
+            slug: mod.slug ?? "",
           }}
         />
       </div>

@@ -16,6 +16,7 @@ interface ModuleFormValues {
   title: string;
   description: string;
   isPublic: boolean;
+  slug: string;
 }
 
 const initialState: FormState = {};
@@ -42,6 +43,17 @@ export function ModuleForm(props: Props) {
         <Input id="title" name="title" defaultValue={defaultTitle} required />
         <FormError>{state.fieldErrors?.title?.[0]}</FormError>
         </div>
+        <Label htmlFor="slug">Demo URL slug (optional)</Label>
+        <Input
+          id="slug"
+          name="slug"
+          defaultValue={props.mode === "edit" ? props.initialValues.slug : ""}
+          placeholder="NAT"
+        />
+        <p className="text-xs text-muted-foreground">
+          Friendly URL for demo mode: /demo/&lt;slug&gt;. Letters, numbers, and dashes only.
+        </p>
+      </div>
       <div className="flex items-center gap-2">
         <input
           type="checkbox"

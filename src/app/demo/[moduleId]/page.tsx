@@ -9,7 +9,7 @@ export async function generateMetadata({
 }) {
   const { moduleId } = await params;
   const mod = await prisma.module.findUnique({
-    where: { id: moduleId },
+    where: { OR: [{ id: moduleId }, { slug: moduleId }] },
     select: { title: true, isPublic: true },
   });
   return { title: mod?.isPublic ? `${mod.title} · Network Nerd` : "Not found" };
@@ -23,7 +23,7 @@ export default async function DemoModulePage({
   const { moduleId } = await params;
 
   const mod = await prisma.module.findUnique({
-    where: { id: moduleId },
+    where: { OR: [{ id: moduleId }, { slug: moduleId }] },
     select: {
       id: true,
       title: true,

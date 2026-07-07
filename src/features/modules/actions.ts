@@ -35,6 +35,7 @@ export async function createModuleAction(
       description: formData.get("description"),
       order: formData.get("order") || String(nextOrder),
       isPublic: formData.get("isPublic") === "true",
+      slug: formData.get("slug"),
     });
     await createModule(courseId, input);
     revalidatePath(`/admin/courses/${courseId}`);
@@ -82,6 +83,7 @@ export async function updateModuleAction(
       title: formData.get("title"),
       description: formData.get("description"),
       isPublic: formData.get("isPublic") === "true",
+      slug: formData.get("slug"),
     });
     await updateModule(id, input);
     revalidatePath(`/admin/courses/${courseId}`);
