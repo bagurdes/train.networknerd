@@ -43,6 +43,8 @@ export function ModuleForm(props: Props) {
         <Input id="title" name="title" defaultValue={defaultTitle} required />
         <FormError>{state.fieldErrors?.title?.[0]}</FormError>
         </div>
+
+      <div className="space-y-1.5">
         <Label htmlFor="slug">Demo URL slug (optional)</Label>
         <Input
           id="slug"
