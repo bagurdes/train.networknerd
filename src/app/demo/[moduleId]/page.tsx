@@ -8,7 +8,7 @@ export async function generateMetadata({
   params: Promise<{ moduleId: string }>;
 }) {
   const { moduleId } = await params;
-  const mod = await prisma.module.findUnique({
+  const mod = await prisma.module.findFirst({
     where: { OR: [{ id: moduleId }, { slug: moduleId }] },
     select: { title: true, isPublic: true },
   });
@@ -22,7 +22,7 @@ export default async function DemoModulePage({
 }) {
   const { moduleId } = await params;
 
-  const mod = await prisma.module.findUnique({
+  const mod = await prisma.module.findFirst({
     where: { OR: [{ id: moduleId }, { slug: moduleId }] },
     select: {
       id: true,
