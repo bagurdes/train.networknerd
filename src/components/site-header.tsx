@@ -46,6 +46,7 @@ function RoleNav({ role }: { role: Role }) {
     role === "ADMIN"
       ? [
           { href: "/admin", label: "Dashboard" },
+          { href: "/admin/modules", label: "Modules" },
           { href: "/admin/courses", label: "Courses" },
           { href: "/admin/classes", label: "Classes" },
           { href: "/admin/users", label: "Users" },

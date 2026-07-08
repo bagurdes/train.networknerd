@@ -107,3 +107,24 @@ function toFormState(err: unknown): FormState {
   console.error("[modules.actions] Unhandled:", err);
   return { error: "Something went wrong. Please try again." };
 }
+
+export async function updateStandaloneModuleAction(
+  id: string,
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  try {
+    await requireRole([Role.ADMIN]);
+    const input = updateModuleSchema.parse({
+      title: formData.get("title"),
+      description: formData.get("description"),
+      isPublic: formData.get("isPublic") === "true",
+      slug: formData.get("slug"),
+    });
+    await updateModule(id, input);
+    revalidatePath("/admin/modules");
+    return { ok: true };
+  } catch (err) {
+    return toFormState(err);
+  }
+}
