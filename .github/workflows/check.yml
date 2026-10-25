@@ -9,8 +9,19 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      # Throwaway database, used only to check the migration files match the schema.
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      # Placeholder only, so Prisma can read the schema. No database is used.
+      # Points at the throwaway CI database above. Never a real database.
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
     defaults:
       run:
@@ -24,6 +35,11 @@ jobs:
       - run: npm ci
       - name: Validate Prisma schema
         run: npx prisma validate 2>&1 | tee -a check.log; exit ${PIPESTATUS[0]}
+      - name: Migrations match schema
+        run: >-
+          npx prisma migrate diff --from-migrations prisma/migrations
+          --to-schema-datamodel prisma/schema.prisma
+          --shadow-database-url "$DATABASE_URL" --exit-code 2>&1 | tee -a check.log; exit ${PIPESTATUS[0]}
       - name: Type check
         run: npm run typecheck 2>&1 | tee -a check.log; exit ${PIPESTATUS[0]}
       - name: Build

@@ -82,8 +82,6 @@ model PasswordResetToken {
   tokenHash String    @unique
   expiresAt DateTime
   usedAt    DateTime?
-  // Class to enroll the user in once they verify (registered via a join link).
-  pendingClassId String?
   createdAt DateTime  @default(now())
 
   @@index([userId])
@@ -96,6 +94,8 @@ model EmailVerificationToken {
   tokenHash String    @unique
   expiresAt DateTime
   usedAt    DateTime?
+  // Class to enroll the user in once they verify (registered via a join link).
+  pendingClassId String?
   createdAt DateTime  @default(now())
 
   @@index([userId])
