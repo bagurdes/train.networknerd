@@ -9,6 +9,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Placeholder only, so Prisma can read the schema. No database is used.
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,6 +22,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx prisma validate
-      - run: npm run typecheck
-      - run: npm run build
+      - name: Validate Prisma schema
+        run: npx prisma validate 2>&1 | tee -a check.log; exit ${PIPESTATUS[0]}
+      - name: Type check
+        run: npm run typecheck 2>&1 | tee -a check.log; exit ${PIPESTATUS[0]}
+      - name: Build
+        run: npm run build 2>&1 | tee -a check.log; exit ${PIPESTATUS[0]}
+      - name: Show errors as annotations
+        if: failure()
+        run: tail -n 40 check.log | sed 's/^/::error::/'
