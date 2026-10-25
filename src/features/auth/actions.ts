@@ -46,6 +46,7 @@ export async function registerAction(
       name: formData.get("name"),
       email: formData.get("email"),
       password: formData.get("password"),
+      joinCode: formData.get("joinCode") ?? undefined,
     });
     const user = await registerStudent(input);
     return { ok: true, email: user.email };
@@ -68,7 +69,7 @@ export async function loginAction(
     await signIn("credentials", {
       email: input.email,
       password: input.password,
-      redirectTo: "/dashboard",
+      redirectTo: safeCallbackPath(formData.get("callbackUrl")) ?? "/dashboard",
     });
     return { ok: true };
   } catch (err) {
@@ -84,6 +85,16 @@ export async function loginAction(
     }
     return toFormState(err);
   }
+}
+
+/**
+ * Only allow same-site relative paths ("/join/ABCD1234"), never "//evil.com"
+ * or absolute URLs, so the login form can't be used as an open redirect.
+ */
+function safeCallbackPath(value: FormDataEntryValue | null): string | null {
+  if (typeof value !== "string") return null;
+  if (!value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) return null;
+  return value;
 }
 
 // ---- Logout ----------------------------------------------------------------

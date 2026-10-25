@@ -27,6 +27,11 @@ export const registerSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   email: emailSchema,
   password: passwordSchema,
+  // Optional class join code (from a /join link). Empty string → undefined.
+  joinCode: z
+    .string()
+    .optional()
+    .transform((s) => (s && s.trim() ? s.trim() : undefined)),
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 
