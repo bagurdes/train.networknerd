@@ -23,9 +23,7 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
 
       // Public routes — accessible without auth.
-      // /verify-email must be public: students click the link before they can log in.
-      // /join shows class info and sign-up / log-in options to anonymous visitors.
-      const publicPaths = ["/", "/login", "/register", "/reset", "/verify-email", "/join"];
+      const publicPaths = ["/", "/login", "/register", "/reset"];
       const isPublic =
         publicPaths.some((p) => path === p || path.startsWith(`${p}/`)) ||
         path.startsWith("/api/auth") ||

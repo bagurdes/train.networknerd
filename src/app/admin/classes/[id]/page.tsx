@@ -17,9 +17,6 @@ import { formatDateShort } from "@/lib/utils";
 import { ClassForm } from "../new/class-form";
 import { AddMembersForm } from "./add-member-form";
 import { RemoveMemberButton } from "./remove-member-button";
-import { JoinCodeCard } from "./join-code-card";
-import { formatJoinCode } from "@/features/classes/join-code";
-import { env } from "@/lib/env";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -61,14 +58,8 @@ export default async function ClassRosterPage({
     name: u.name,
     email: u.email,
     role: u.role,
-    verified: !!u.emailVerified,
-    classCount: u._count.memberships,
     alreadyEnrolled: enrolledUserIds.has(u.id),
   }));
-
-  const joinUrl = cls.joinCode
-    ? `${env.NEXTAUTH_URL.replace(/\/$/, "")}/join/${cls.joinCode}`
-    : null;
 
   const studentCount = cls.memberships.filter((m) => m.role === "STUDENT").length;
 
@@ -117,9 +108,6 @@ export default async function ClassRosterPage({
                         <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted">
                           {MEMBERSHIP_LABELS[m.role] ?? m.role}
                         </span>
-                        {m.source === "JOIN_CODE" && (
-                          <span className="ml-1 text-xs text-muted-foreground">via code</span>
-                        )}
                       </TableCell>
                        <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
@@ -137,28 +125,12 @@ export default async function ClassRosterPage({
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Join code */}
+          {/* Add members */}
           <div className="rounded-lg border border-border bg-card p-4 space-y-3">
             <div>
-              <h2 className="font-semibold">Join code</h2>
+              <h2 className="font-semibold">Add members</h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Share the code or link with students so they can add themselves.
-              </p>
-            </div>
-            <JoinCodeCard
-              classId={id}
-              code={cls.joinCode ? formatJoinCode(cls.joinCode) : null}
-              joinUrl={joinUrl}
-              enabled={cls.joinEnabled}
-            />
-          </div>
-
-          {/* Add members manually */}
-          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-            <div>
-              <h2 className="font-semibold">Add members manually</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Search for a registered user and add them as a student.
+                Already enrolled users are shown but cannot be selected.
               </p>
             </div>
             <AddMembersForm classId={id} users={usersWithStatus} />

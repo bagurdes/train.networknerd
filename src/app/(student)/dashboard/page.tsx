@@ -2,7 +2,6 @@ import Link from "next/link";
 import { requireUser } from "@/lib/authorize";
 import { getStudentClasses } from "@/features/classes/service";
 import { formatDateShort } from "@/lib/utils";
-import { JoinClassForm } from "@/components/classes/join-class-form";
 
 export const metadata = { title: "Dashboard" };
 
@@ -21,7 +20,7 @@ export default async function StudentDashboard() {
         <div className="rounded-lg border border-border bg-card p-10 text-center text-muted-foreground">
           <p className="text-lg font-medium">No classes yet</p>
           <p className="text-sm mt-1">
-            You haven&apos;t joined any classes yet. Enter the join code from your instructor below.
+            You haven&apos;t been enrolled in any classes. Contact your instructor.
           </p>
         </div>
       ) : (
@@ -43,18 +42,6 @@ export default async function StudentDashboard() {
               </div>
             </Link>
           ))}
-        </div>
-      )}
-
-      {user.role === "STUDENT" && (
-        <div className="rounded-lg border border-border bg-card p-5 max-w-md space-y-3">
-          <div>
-            <h2 className="font-semibold">Join a class</h2>
-            <p className="text-sm text-muted-foreground">
-              Got a join code from your instructor? Enter it here.
-            </p>
-          </div>
-          <JoinClassForm />
         </div>
       )}
     </div>

@@ -4,19 +4,10 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { ZodError } from "zod";
 import { Role, MembershipRole } from "@prisma/client";
-import { requireRole, requireUser } from "@/lib/authorize";
+import { requireRole } from "@/lib/authorize";
 import { AppError } from "@/lib/errors";
 import { createClassSchema, updateClassSchema, addMemberSchema } from "./schema";
-import {
-  addMember,
-  createClass,
-  deleteClass,
-  joinClassByCode,
-  regenerateJoinCode,
-  removeMember,
-  setJoinEnabled,
-  updateClass,
-} from "./service";
+import { addMember, createClass, deleteClass, removeMember, updateClass } from "./service";
 import { prisma } from "@/lib/prisma";
 
 export interface FormState {
@@ -150,41 +141,6 @@ export async function removeMemberAction(classId: string, userId: string): Promi
   await requireRole([Role.ADMIN, Role.INSTRUCTOR]);
   await removeMember(classId, userId);
   revalidatePath(`/admin/classes/${classId}`);
-}
-
-// ---- Join codes ------------------------------------------------------------
-
-export async function regenerateJoinCodeAction(classId: string): Promise<void> {
-  await requireRole([Role.ADMIN]);
-  await regenerateJoinCode(classId);
-  revalidatePath(`/admin/classes/${classId}`);
-}
-
-export async function setJoinEnabledAction(classId: string, enabled: boolean): Promise<void> {
-  await requireRole([Role.ADMIN]);
-  await setJoinEnabled(classId, enabled);
-  revalidatePath(`/admin/classes/${classId}`);
-}
-
-/** Student enters a join code (dashboard box or /join/[code] page). */
-export async function joinClassAction(
-  _prev: FormState,
-  formData: FormData,
-): Promise<FormState> {
-  let classId: string;
-  try {
-    const user = await requireUser();
-    if (user.role !== Role.STUDENT) {
-      return { error: "Join codes are for student accounts. Add yourself from the admin class page." };
-    }
-    const code = String(formData.get("code") ?? "");
-    if (!code.trim()) return { fieldErrors: { code: ["Enter a join code."] } };
-    classId = await joinClassByCode(user.id, code);
-  } catch (err) {
-    return toFormState(err);
-  }
-  revalidatePath("/dashboard");
-  redirect(`/classes/${classId}`);
 }
 
 function toFormState(err: unknown): FormState {

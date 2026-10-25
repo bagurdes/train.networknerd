@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { verifyEmail, type VerifyEmailResult } from "@/features/auth/service";
+import { verifyEmail } from "@/features/auth/service";
 
 export const metadata = { title: "Verify Email · Network Nerd" };
 
@@ -12,14 +12,12 @@ export default async function VerifyEmailPage({
 
   let success = false;
   let name = "";
-  let joinedClass: VerifyEmailResult["joinedClass"];
   let errorMessage = "";
 
   try {
     const result = await verifyEmail(token);
     success = true;
     name = result.name;
-    joinedClass = result.joinedClass;
   } catch (err) {
     errorMessage =
       err instanceof Error ? err.message : "Something went wrong. Please try again.";
@@ -33,16 +31,6 @@ export default async function VerifyEmailPage({
         <p className="text-muted-foreground">
           Welcome to Network Nerd, {name}. Your account is now active.
         </p>
-        {joinedClass && !joinedClass.error && (
-          <p className="text-sm">
-            You&rsquo;ve been added to <strong>{joinedClass.name}</strong>.
-          </p>
-        )}
-        {joinedClass?.error && (
-          <p className="text-sm text-destructive">
-            We couldn&rsquo;t add you to {joinedClass.name}: {joinedClass.error}
-          </p>
-        )}
         <Link
           href="/login"
           className="inline-block mt-4 px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
