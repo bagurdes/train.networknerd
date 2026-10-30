@@ -5,6 +5,8 @@ import { env } from "@/lib/env";
 import { sendPasswordResetEmail, sendVerificationEmail } from "@/lib/email";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 import { hashPassword } from "./hash";
+import { enrollStudent, findJoinableClass } from "@/features/classes/service";
+import { EnrollmentSource } from "@prisma/client";
 import type {
   ConfirmResetInput,
   RegisterInput,
@@ -31,6 +33,18 @@ export async function registerStudent(input: RegisterInput) {
     throw new ConflictError("An account with that email already exists");
   }
 
+  // Registering through a class join link: check the code before creating the
+  // account, so a bad or expired code is reported up front. The student is
+  // enrolled when they verify their email (see verifyEmail).
+  let pendingClassId: string | null = null;
+  if (input.joinCode) {
+    const cls = await findJoinableClass(input.joinCode);
+    if (cls._count.memberships >= cls.capacity) {
+      throw new ValidationError("This class is full. Contact your instructor.");
+    }
+    pendingClassId = cls.id;
+  }
+
   const passwordHash = await hashPassword(input.password);
 
   const user = await prisma.user.create({
@@ -50,7 +64,7 @@ export async function registerStudent(input: RegisterInput) {
   const expiresAt = new Date(Date.now() + VERIFY_TOKEN_TTL_MS);
 
   await prisma.emailVerificationToken.create({
-    data: { userId: user.id, tokenHash, expiresAt },
+    data: { userId: user.id, tokenHash, expiresAt, pendingClassId },
   });
 
   const verifyUrl = `${env.NEXTAUTH_URL.replace(/\/$/, "")}/verify-email/${token}`;
@@ -67,7 +81,14 @@ export async function registerStudent(input: RegisterInput) {
  * Verify an email address using the token from the verification link.
  * Sets emailVerified and deletes the token.
  */
-export async function verifyEmail(token: string): Promise<{ name: string; email: string }> {
+export interface VerifyEmailResult {
+  name: string;
+  email: string;
+  /** Set when the student registered through a class join link. */
+  joinedClass?: { name: string; error?: string };
+}
+
+export async function verifyEmail(token: string): Promise<VerifyEmailResult> {
   const tokenHash = sha256(token);
   const record = await prisma.emailVerificationToken.findUnique({
     where: { tokenHash },
@@ -92,7 +113,30 @@ export async function verifyEmail(token: string): Promise<{ name: string; email:
     }),
   ]);
 
-  return { name: record.user.name, email: record.user.email };
+  const result: VerifyEmailResult = { name: record.user.name, email: record.user.email };
+
+  // Enroll in the class they registered for. The account is verified either
+  // way; if enrollment fails (class filled up or ended in the meantime) we say
+  // so on the confirmation page instead of failing verification.
+  if (record.pendingClassId) {
+    const cls = await prisma.class.findUnique({
+      where: { id: record.pendingClassId },
+      select: { name: true },
+    });
+    if (cls) {
+      try {
+        await enrollStudent(record.pendingClassId, record.userId, EnrollmentSource.JOIN_CODE);
+        result.joinedClass = { name: cls.name };
+      } catch (err) {
+        result.joinedClass = {
+          name: cls.name,
+          error: err instanceof Error ? err.message : "Could not add you to the class.",
+        };
+      }
+    }
+  }
+
+  return result;
 }
 
 // ---------------------------------------------------------------------------

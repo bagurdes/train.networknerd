@@ -9,11 +9,12 @@ import { loginAction, type FormState } from "@/features/auth/actions";
 
 const initial: FormState = {};
 
-export function LoginForm() {
+export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
   const [state, action] = useActionState(loginAction, initial);
 
   return (
     <form action={action} className="space-y-4">
+      {callbackUrl && <input type="hidden" name="callbackUrl" value={callbackUrl} />}
       <div className="space-y-1.5">
         <Label htmlFor="email">Email</Label>
         <Input id="email" name="email" type="email" autoComplete="email" required />

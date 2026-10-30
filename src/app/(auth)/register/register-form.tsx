@@ -9,7 +9,7 @@ import { registerAction, type FormState } from "@/features/auth/actions";
 
 const initial: FormState = {};
 
-export function RegisterForm() {
+export function RegisterForm({ joinCode }: { joinCode?: string }) {
   const [state, action] = useActionState(registerAction, initial);
   const [confirmError, setConfirmError] = useState("");
 
@@ -33,7 +33,7 @@ export function RegisterForm() {
         <h2 className="text-lg font-semibold">Check your email</h2>
         <p className="text-sm text-muted-foreground">
           We sent a verification link to <strong>{state.email}</strong>.
-          Click the link to activate your account.
+          Click the link to activate your account{joinCode ? " and join your class" : ""}.
         </p>
         <p className="text-xs text-muted-foreground">
           The link expires in 24 hours. Check your spam folder if you don&apos;t see it.
@@ -44,6 +44,7 @@ export function RegisterForm() {
 
   return (
     <form action={action} onSubmit={handleSubmit} className="space-y-4">
+      {joinCode && <input type="hidden" name="joinCode" value={joinCode} />}
       <div className="space-y-1.5">
         <Label htmlFor="name">Name</Label>
         <Input id="name" name="name" autoComplete="name" required />

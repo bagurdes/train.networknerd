@@ -39,6 +39,7 @@ enum MembershipRole {
 enum EnrollmentSource {
   ASSIGNED // Added by an admin or instructor.
   SELF_ENROLLED // Phase 3: student signed up & paid for a Virtual Class.
+  JOIN_CODE // Student joined using the class join code / invite link.
 }
 
 enum AttemptVerdict {
@@ -93,6 +94,8 @@ model EmailVerificationToken {
   tokenHash String    @unique
   expiresAt DateTime
   usedAt    DateTime?
+  // Class to enroll the user in once they verify (registered via a join link).
+  pendingClassId String?
   createdAt DateTime  @default(now())
 
   @@index([userId])
@@ -188,6 +191,9 @@ model Class {
   endDate   DateTime?
   capacity  Int       @default(30)
   isVirtual Boolean   @default(false)
+  // Join code students use to enroll themselves (stored normalized: A-Z/2-9, no dash).
+  joinCode    String?  @unique
+  joinEnabled Boolean  @default(true)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
