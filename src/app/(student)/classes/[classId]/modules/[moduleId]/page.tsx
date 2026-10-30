@@ -39,7 +39,17 @@ export default async function StudentModulePage({
   });
   if (!mod) notFound();
 
-  const questions = await getModuleProgress(user.id, moduleId);
+  // Only send a question's answer and explanation to the browser once the
+  // student has answered it correctly. Otherwise they'd be readable in the
+  // page source. Wrong / unsure answers fetch them on request instead.
+  const questions = (await getModuleProgress(user.id, moduleId)).map((q) => {
+    const answeredCorrectly = q.attempts[0]?.verdict === "CORRECT";
+    return {
+      ...q,
+      correctAnswer: answeredCorrectly ? q.correctAnswer : null,
+      explanation: answeredCorrectly ? q.explanation : null,
+    };
+  });
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

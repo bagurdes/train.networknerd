@@ -25,7 +25,12 @@ export async function gradeAnswer(input: GradeInput): Promise<GradeResult> {
 Compare the student's answer to the correct answer and explanation.
 Return a JSON object with exactly two keys:
 - "verdict": one of "correct", "incorrect", or "unsure"
-- "rationale": a brief 1-2 sentence explanation of your decision
+- "rationale": a brief 1-2 sentence explanation of your decision, written to the student
+
+If the verdict is "incorrect" or "unsure", the student can try again, so the
+rationale must NOT state, quote, or paraphrase the correct answer or give it
+away. Say what is missing or wrong in their answer, or nudge them toward what
+to look at, without revealing the answer itself.
 
 Use "correct" if the student captures the key idea (exact wording need not match).
 Use "incorrect" if the answer contradicts or misses the key idea.

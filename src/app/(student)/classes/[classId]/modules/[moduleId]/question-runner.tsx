@@ -1,10 +1,15 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { FormError } from "@/components/ui/form-error";
-import { submitAttemptAction, type AttemptResult } from "@/features/attempts/actions";
+import { Button } from "@/components/ui/button";
+import {
+  revealAnswerAction,
+  submitAttemptAction,
+  type AttemptResult,
+} from "@/features/attempts/actions";
 
 interface Question {
   id: string;
@@ -16,7 +21,8 @@ interface Question {
     studentAnswer: string;
     aiRationale: string | null;
   }[];
-  correctAnswer: string;
+  /** Only present once the student has answered correctly (see page.tsx). */
+  correctAnswer: string | null;
   explanation: string | null;
 }
 
@@ -62,6 +68,55 @@ function QuestionCard({
   const prior = question.attempts[0];
   const justSubmitted = result.ok;
 
+  // The latest result to show: the answer just submitted, or the saved one.
+  const latest = justSubmitted
+    ? {
+        label: "Your answer",
+        verdict: result.verdict ?? "UNSURE",
+        studentAnswer: result.studentAnswer ?? "",
+        rationale: result.rationale ?? null,
+        correctAnswer: result.correctAnswer ?? null,
+        explanation: result.explanation ?? null,
+      }
+    : prior
+      ? {
+          label: "Your previous answer",
+          verdict: prior.verdict,
+          studentAnswer: prior.studentAnswer,
+          rationale: prior.aiRationale,
+          correctAnswer: question.correctAnswer,
+          explanation: question.explanation,
+        }
+      : null;
+
+  // Wrong / unsure answers: the answer and explanation stay hidden until the
+  // student asks for them. A new submission hides them again.
+  const [revealed, setRevealed] = useState<{ correctAnswer: string; explanation: string | null } | null>(null);
+  const [revealError, setRevealError] = useState("");
+  const [revealing, startReveal] = useTransition();
+  useEffect(() => {
+    setRevealed(null);
+    setRevealError("");
+  }, [result]);
+
+  function reveal() {
+    startReveal(async () => {
+      const r = await revealAnswerAction(question.id, classId, moduleId);
+      if (r.ok && r.correctAnswer !== undefined) {
+        setRevealed({ correctAnswer: r.correctAnswer, explanation: r.explanation ?? null });
+        setRevealError("");
+      } else {
+        setRevealError(r.error ?? "Could not load the answer. Please try again.");
+      }
+    });
+  }
+
+  const isCorrect = latest?.verdict === "CORRECT";
+  const answerToShow =
+    isCorrect && latest?.correctAnswer
+      ? { correctAnswer: latest.correctAnswer, explanation: latest.explanation }
+      : revealed;
+
   return (
     <div className="rounded-lg border border-border bg-card overflow-hidden">
       {/* Header */}
@@ -70,11 +125,8 @@ function QuestionCard({
           {index + 1}
         </span>
         <span className="text-xs text-muted-foreground">Question {index + 1} of {total}</span>
-        {prior && !justSubmitted && (
-          <span className="ml-auto"><VerdictBadge verdict={prior.verdict} /></span>
-        )}
-        {justSubmitted && (
-          <span className="ml-auto"><VerdictBadge verdict={result.verdict ?? "UNSURE"} /></span>
+        {latest && (
+          <span className="ml-auto"><VerdictBadge verdict={latest.verdict} /></span>
         )}
       </div>
 
@@ -82,7 +134,7 @@ function QuestionCard({
         {/* Question text */}
         <p className="text-base leading-relaxed font-medium whitespace-pre-wrap">{question.prompt}</p>
 
-        {/* Hint — only shown before submission, only if hint exists */}
+        {/* Hint — only if the question has one */}
         {question.hint && (
           <div>
             <button
@@ -101,54 +153,45 @@ function QuestionCard({
           </div>
         )}
 
-        {/* Prior attempt result */}
-        {prior && !justSubmitted && (
+        {/* Latest result */}
+        {latest && (
           <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your previous answer</p>
-              <p className="text-sm whitespace-pre-wrap">{prior.studentAnswer}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{latest.label}</p>
+              <p className="text-sm whitespace-pre-wrap">{latest.studentAnswer}</p>
             </div>
-            {prior.aiRationale && (
+            {latest.rationale && (
               <div className="space-y-1">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">AI feedback</p>
-                <p className="text-sm text-muted-foreground italic">{prior.aiRationale}</p>
+                <p className="text-sm text-muted-foreground italic">{latest.rationale}</p>
               </div>
             )}
-            <div className="pt-2 border-t border-border space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Correct answer</p>
-              <p className="text-sm whitespace-pre-wrap">{question.correctAnswer}</p>
-            </div>
-            {question.explanation && (
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Explanation</p>
-                <p className="text-sm whitespace-pre-wrap">{question.explanation}</p>
-              </div>
-            )}
-          </div>
-        )}
 
-        {/* Just submitted result */}
-        {justSubmitted && (
-          <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your answer</p>
-              <p className="text-sm whitespace-pre-wrap">{result.studentAnswer}</p>
-            </div>
-            {result.rationale && (
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">AI feedback</p>
-                <p className="text-sm text-muted-foreground italic">{result.rationale}</p>
-              </div>
-            )}
-            <div className="pt-2 border-t border-border space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Correct answer</p>
-              <p className="text-sm whitespace-pre-wrap">{result.correctAnswer}</p>
-            </div>
-            {result.explanation && (
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Explanation</p>
-                <p className="text-sm whitespace-pre-wrap">{result.explanation}</p>
-              </div>
+            {answerToShow ? (
+              <>
+                <div className="pt-2 border-t border-border space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Correct answer</p>
+                  <p className="text-sm whitespace-pre-wrap">{answerToShow.correctAnswer}</p>
+                </div>
+                {answerToShow.explanation && (
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Explanation</p>
+                    <p className="text-sm whitespace-pre-wrap">{answerToShow.explanation}</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              !isCorrect && (
+                <div className="pt-2 border-t border-border space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    Try again below, or reveal the answer if you&rsquo;re stuck.
+                  </p>
+                  <Button type="button" size="sm" variant="outline" onClick={reveal} disabled={revealing}>
+                    {revealing ? "Loading…" : "Show Correct Answer and Explanation"}
+                  </Button>
+                  <FormError>{revealError}</FormError>
+                </div>
+              )
             )}
           </div>
         )}

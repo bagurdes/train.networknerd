@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { gradeAnswer } from "@/features/grading/service";
-import { NotFoundError } from "@/lib/errors";
+import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 
 export async function submitAttempt(
   userId: string,
@@ -84,4 +84,50 @@ export async function getModuleProgress(userId: string, moduleId: string) {
     },
   });
   return questions;
+}
+
+/**
+ * Make sure a student may work on a question: they're in the class, the
+ * class's course includes the module, and the question belongs to the module.
+ */
+export async function assertStudentCanAccessQuestion(
+  userId: string,
+  classId: string,
+  moduleId: string,
+  questionId: string,
+) {
+  const [membership, cls, question] = await Promise.all([
+    prisma.classMembership.findUnique({
+      where: { classId_userId: { classId, userId } },
+      select: { id: true },
+    }),
+    prisma.class.findUnique({ where: { id: classId }, select: { courseId: true } }),
+    prisma.question.findUnique({ where: { id: questionId }, select: { moduleId: true } }),
+  ]);
+  if (!question || question.moduleId !== moduleId) throw new NotFoundError("Question not found");
+  if (!membership || !cls) throw new ForbiddenError();
+  const inCourse = await prisma.courseModule.findFirst({
+    where: { courseId: cls.courseId, moduleId },
+    select: { id: true },
+  });
+  if (!inCourse) throw new ForbiddenError();
+}
+
+/**
+ * The "Show Correct Answer and Explanation" button. Only available after the
+ * student has made at least one attempt, so answers can't be pulled up front.
+ */
+export async function revealAnswer(userId: string, questionId: string) {
+  const attempt = await prisma.attempt.findFirst({
+    where: { userId, questionId },
+    select: { id: true },
+  });
+  if (!attempt) throw new ValidationError("Submit an answer first.");
+
+  const question = await prisma.question.findUnique({
+    where: { id: questionId },
+    select: { correctAnswer: true, explanation: true },
+  });
+  if (!question) throw new NotFoundError("Question not found");
+  return question;
 }
