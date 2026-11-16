@@ -95,9 +95,38 @@ export async function verifyEmail(token: string): Promise<VerifyEmailResult> {
     include: { user: true },
   });
 
-  if (!record || record.usedAt) {
-    throw new ValidationError("This verification link is invalid or has already been used");
+  if (!record) {
+    throw new ValidationError("This verification link is invalid.");
   }
+
+  // Idempotency: if this token was already used and the user is now verified,
+  // treat the request as a success. This handles email security scanners and
+  // link-preview services (Gmail, Outlook, corporate anti-phishing proxies)
+  // that prefetch the verification URL before the user ever clicks it, and
+  // also makes the success page safe to refresh or re-visit.
+  if (record.usedAt && record.user.emailVerified) {
+    const result: VerifyEmailResult = {
+      name: record.user.name,
+      email: record.user.email,
+    };
+    if (record.pendingClassId) {
+      const membership = await prisma.classMembership.findFirst({
+        where: { userId: record.userId, classId: record.pendingClassId },
+        include: { class: { select: { name: true } } },
+      });
+      if (membership) {
+        result.joinedClass = { name: membership.class.name };
+      }
+    }
+    return result;
+  }
+
+  // Token was used but the user isn't verified — defensive guard for a state
+  // that shouldn't occur in normal operation.
+  if (record.usedAt) {
+    throw new ValidationError("This verification link has already been used.");
+  }
+
   if (record.expiresAt.getTime() < Date.now()) {
     throw new ValidationError("This verification link has expired. Please register again.");
   }

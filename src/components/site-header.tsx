@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Role } from "@prisma/client";
 import { logoutAction } from "@/features/auth/actions";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/logo";
 
 export function SiteHeader({
   user,
@@ -20,9 +21,13 @@ export function SiteHeader({
         <div className="flex items-center gap-6">
           <Link
             href={homeHref}
-            className="text-sm font-bold uppercase tracking-widest text-primary"
+            className="flex items-center gap-2"
+            aria-label="Network Nerd home"
           >
-            Network Nerd
+            <Logo variant="icon" className="h-9 w-auto" />
+            <span className="hidden text-sm font-bold uppercase tracking-widest text-primary sm:inline">
+              Network Nerd
+            </span>
           </Link>
           <RoleNav role={user.role} />
         </div>
