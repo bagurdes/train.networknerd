@@ -29,6 +29,10 @@ export function Logo({ variant = "full", className, priority = false }: LogoProp
         width={1424}
         height={1374}
         priority={priority}
+        // Logos don't benefit from Next.js image optimization and the optimizer
+        // endpoint (/_next/image) has been unreliable on our Railway deploy.
+        // Serve the raw PNG from /public directly.
+        unoptimized
         className={cn("h-9 w-auto", className)}
       />
     );
@@ -40,6 +44,7 @@ export function Logo({ variant = "full", className, priority = false }: LogoProp
       width={1708}
       height={2219}
       priority={priority}
+      unoptimized
       className={cn("h-32 w-auto", className)}
     />
   );
