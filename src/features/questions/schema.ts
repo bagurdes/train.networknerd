@@ -5,6 +5,9 @@ export const createQuestionSchema = z.object({
   correctAnswer: z.string().trim().min(1, "Correct answer is required").max(5000),
   explanation: z.string().trim().max(5000).optional().default(""),
   hint: z.string().trim().max(5000).optional().default(""),
+  // Admin-only grader context. Larger cap because this may hold several
+  // alternate phrasings + explanatory notes for the model.
+  graderNotes: z.string().trim().max(10000).optional().default(""),
   order: z.coerce.number().int().min(1, "Order must be at least 1"),
 });
 export type CreateQuestionInput = z.infer<typeof createQuestionSchema>;

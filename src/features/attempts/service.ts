@@ -10,7 +10,12 @@ export async function submitAttempt(
   // Fetch question for grading
   const question = await prisma.question.findUnique({
     where: { id: questionId },
-    select: { prompt: true, correctAnswer: true, explanation: true },
+    select: {
+      prompt: true,
+      correctAnswer: true,
+      explanation: true,
+      graderNotes: true,
+    },
   });
   if (!question) throw new NotFoundError("Question not found");
 
@@ -19,6 +24,7 @@ export async function submitAttempt(
     prompt: question.prompt,
     correctAnswer: question.correctAnswer,
     explanation: question.explanation ?? undefined,
+    graderNotes: question.graderNotes ?? undefined,
     studentAnswer,
   });
 

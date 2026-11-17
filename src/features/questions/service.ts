@@ -52,6 +52,8 @@ export async function createQuestion(moduleId: string, input: CreateQuestionInpu
       correctAnswer: input.correctAnswer,
       explanation: input.explanation,
       hint: input.hint ?? "",
+      // Store empty string as null so "no notes" is distinguishable in queries.
+      graderNotes: input.graderNotes?.trim() ? input.graderNotes : null,
       order: input.order,
     },
     select: { id: true },
@@ -66,6 +68,7 @@ export async function updateQuestion(id: string, input: UpdateQuestionInput) {
       correctAnswer: input.correctAnswer,
       explanation: input.explanation,
       hint: input.hint ?? "",
+      graderNotes: input.graderNotes?.trim() ? input.graderNotes : null,
       order: input.order,
     },
   });

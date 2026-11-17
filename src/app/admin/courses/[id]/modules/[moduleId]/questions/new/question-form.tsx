@@ -17,6 +17,7 @@ interface QuestionFormValues {
   correctAnswer: string;
   explanation: string;
   hint: string;
+  graderNotes: string;
   order: number;
 }
 
@@ -80,6 +81,30 @@ export function QuestionForm(props: Props) {
           The reference answer Claude uses when grading student responses.
         </p>
         <FormError>{state.fieldErrors?.correctAnswer?.[0]}</FormError>
+      </div>
+
+      {/* Admin-only grader context — visually distinct so it's never confused
+          with a student-facing field. */}
+      <div className="space-y-1.5 rounded-lg border border-dashed border-border bg-muted/40 p-4">
+        <div className="flex items-center gap-2">
+          <Label htmlFor="graderNotes">Grader notes</Label>
+          <span className="rounded-full bg-secondary/20 px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+            🔒 Admin only · hidden from students
+          </span>
+        </div>
+        <Textarea
+          id="graderNotes"
+          name="graderNotes"
+          rows={4}
+          defaultValue={iv?.graderNotes ?? ""}
+          placeholder={`Extra context for the AI grader. Examples:\n• Also accept: "three-way handshake initiation", "start of a TCP connection"\n• Mark correct if they mention synchronize/sync, not just "connect"\n• Common wrong answer to still mark incorrect: "closes the connection"`}
+        />
+        <p className="text-xs text-muted-foreground">
+          Sent to the AI grader along with the question and correct answer.
+          Use this to expand what counts as correct, flag common near-misses,
+          or add domain context. Students never see this field.
+        </p>
+        <FormError>{state.fieldErrors?.graderNotes?.[0]}</FormError>
       </div>
 
       <div className="space-y-1.5">

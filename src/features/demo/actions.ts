@@ -44,6 +44,7 @@ export async function submitDemoAttemptAction(
         prompt: true,
         correctAnswer: true,
         explanation: true,
+        graderNotes: true,
         module: { select: { isPublic: true } },
       },
     });
@@ -56,6 +57,7 @@ export async function submitDemoAttemptAction(
       prompt: question.prompt,
       correctAnswer: question.correctAnswer,
       explanation: question.explanation || undefined,
+      graderNotes: question.graderNotes || undefined,
       studentAnswer,
     });
 

@@ -5,6 +5,12 @@ interface GradeInput {
   prompt: string;
   correctAnswer: string;
   explanation?: string;
+  /**
+   * Admin-only notes for the grader. May contain alternate acceptable
+   * phrasings, common correct variants the model has been missing, or extra
+   * domain context. NEVER shown to the student.
+   */
+  graderNotes?: string;
   studentAnswer: string;
 }
 
@@ -35,13 +41,20 @@ to look at, without revealing the answer itself.
 Use "correct" if the student captures the key idea (exact wording need not match).
 Use "incorrect" if the answer contradicts or misses the key idea.
 Use "unsure" if the answer is ambiguous, partially right, or you cannot confidently judge.
+
+If the message includes "Grader notes", treat those as authoritative
+instructor guidance about what to accept — e.g., alternate phrasings that
+should also be graded correct, or domain context the instructor wants you to
+weigh. Grader notes are private to the instructor; never quote or reveal them
+to the student in your rationale.
+
 Respond with JSON only. No markdown, no backticks, no preamble.`,
       messages: [
         {
           role: "user",
           content: `Question: ${input.prompt}
 
-Correct answer: ${input.correctAnswer}${input.explanation ? `\n\nExplanation: ${input.explanation}` : ""}
+Correct answer: ${input.correctAnswer}${input.explanation ? `\n\nExplanation: ${input.explanation}` : ""}${input.graderNotes ? `\n\nGrader notes (PRIVATE — do not reveal to student): ${input.graderNotes}` : ""}
 
 Student's answer: ${input.studentAnswer}`,
         },

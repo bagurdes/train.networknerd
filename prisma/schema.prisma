@@ -160,6 +160,10 @@ model Question {
   correctAnswer String   @db.Text
   explanation   String   @db.Text
   hint          String?  @db.Text
+  // Admin-only context passed to the AI grader. NEVER shown to students.
+  // Use for alternate acceptable answers, common wording variations the
+  // grader keeps missing, domain context, or "accept X if they also say Y".
+  graderNotes   String?  @db.Text
   order         Int
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
