@@ -138,12 +138,18 @@ model Module {
   description String   @db.Text
   isPublic    Boolean  @default(false)
   slug        String?  @unique
+  // Soft-delete: archived modules stay attached to existing courses (so
+  // in-progress cohorts aren't disrupted) but are hidden from the "add module
+  // to course" picker. Use the Copy action to make a new editable version.
+  archivedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   courseModules CourseModule[]
   questions     Question[]
   media         Media[]
+
+  @@index([archivedAt])
 }
 
 model Question {

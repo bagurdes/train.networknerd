@@ -8,10 +8,13 @@ import { requireRole } from "@/lib/authorize";
 import { AppError } from "@/lib/errors";
 import { createModuleSchema, updateModuleSchema, assignModuleSchema } from "./schema";
 import {
+  archiveModule,
   assignModuleToCourse,
+  copyModule,
   createModule,
   deleteModule,
   getNextModuleOrder,
+  unarchiveModule,
   unassignModuleFromCourse,
   updateModule,
 } from "./service";
@@ -127,4 +130,26 @@ export async function updateStandaloneModuleAction(
   } catch (err) {
     return toFormState(err);
   }
+}
+
+// ---- Copy / archive / unarchive --------------------------------------------
+// All three stay on the modules list — they revalidate the admin page so the
+// change is visible on the next render.
+
+export async function copyModuleAction(sourceId: string): Promise<void> {
+  await requireRole([Role.ADMIN]);
+  await copyModule(sourceId);
+  revalidatePath("/admin/modules");
+}
+
+export async function archiveModuleAction(id: string): Promise<void> {
+  await requireRole([Role.ADMIN]);
+  await archiveModule(id);
+  revalidatePath("/admin/modules");
+}
+
+export async function unarchiveModuleAction(id: string): Promise<void> {
+  await requireRole([Role.ADMIN]);
+  await unarchiveModule(id);
+  revalidatePath("/admin/modules");
 }
