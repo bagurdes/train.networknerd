@@ -14,6 +14,7 @@ import {
   createModule,
   deleteModule,
   getNextModuleOrder,
+  reorderCourseModules,
   unarchiveModule,
   unassignModuleFromCourse,
   updateModule,
@@ -152,4 +153,24 @@ export async function unarchiveModuleAction(id: string): Promise<void> {
   await requireRole([Role.ADMIN]);
   await unarchiveModule(id);
   revalidatePath("/admin/modules");
+}
+
+/**
+ * Persist a drag-and-drop reorder of the modules inside a course.
+ * Returns ok/error (not a redirect) so the client can undo the optimistic UI.
+ */
+export async function reorderCourseModulesAction(
+  courseId: string,
+  orderedCourseModuleIds: string[],
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await requireRole([Role.ADMIN]);
+    await reorderCourseModules(courseId, orderedCourseModuleIds);
+    revalidatePath(`/admin/courses/${courseId}`);
+    return { ok: true };
+  } catch (err) {
+    if (err instanceof AppError) return { ok: false, error: err.message };
+    console.error("[modules.actions] reorder:", err);
+    return { ok: false, error: "Could not reorder modules" };
+  }
 }

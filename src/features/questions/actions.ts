@@ -7,7 +7,13 @@ import { Role } from "@prisma/client";
 import { requireRole } from "@/lib/authorize";
 import { AppError } from "@/lib/errors";
 import { createQuestionSchema, updateQuestionSchema } from "./schema";
-import { createQuestion, deleteQuestion, getNextQuestionOrder, updateQuestion } from "./service";
+import {
+  createQuestion,
+  deleteQuestion,
+  getNextQuestionOrder,
+  reorderQuestions,
+  updateQuestion,
+} from "./service";
 
 export interface FormState {
   ok?: boolean;
@@ -88,6 +94,27 @@ export async function deleteQuestionAction(
   const dest = questionsListPath(moduleId, courseId);
   revalidatePath(dest);
   redirect(dest);
+}
+
+/**
+ * Persist a drag-and-drop reorder. Returns a small ok/error object (NOT a
+ * redirect) so the client can roll back the optimistic UI on failure.
+ */
+export async function reorderQuestionsAction(
+  moduleId: string,
+  courseId: string | null,
+  orderedIds: string[],
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await requireRole([Role.ADMIN]);
+    await reorderQuestions(moduleId, orderedIds);
+    revalidatePath(questionsListPath(moduleId, courseId));
+    return { ok: true };
+  } catch (err) {
+    if (err instanceof AppError) return { ok: false, error: err.message };
+    console.error("[questions.actions] reorder:", err);
+    return { ok: false, error: "Could not reorder questions" };
+  }
 }
 
 function toFormState(err: unknown): FormState {

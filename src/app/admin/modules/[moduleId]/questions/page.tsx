@@ -3,15 +3,8 @@ import { notFound } from "next/navigation";
 import { getModule } from "@/features/modules/service";
 import { listQuestions } from "@/features/questions/service";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableEmpty,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TableEmpty } from "@/components/ui/table";
+import { SortableQuestionsTable } from "@/components/sortable-questions-table";
 
 export const metadata = { title: "Module Questions · Admin" };
 
@@ -55,36 +48,16 @@ export default async function StandaloneQuestionsPage({
           <p>No questions yet.</p>
         </TableEmpty>
       ) : (
-        <div className="rounded-lg border border-border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">#</TableHead>
-                <TableHead>Question</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {questions.map((q) => (
-                <TableRow key={q.id}>
-                  <TableCell className="text-muted-foreground font-mono text-sm">
-                    {q.order}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    <span className="line-clamp-2 whitespace-pre-wrap">{q.prompt}</span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button asChild size="sm" variant="outline">
-                      <Link href={`/admin/modules/${moduleId}/questions/${q.id}/edit`}>
-                        Edit
-                      </Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <>
+          <p className="text-xs text-muted-foreground">
+            Drag a row to reorder. Changes save automatically.
+          </p>
+          <SortableQuestionsTable
+            questions={questions.map((q) => ({ id: q.id, prompt: q.prompt, order: q.order }))}
+            moduleId={moduleId}
+            courseId={null}
+          />
+        </>
       )}
     </div>
   );

@@ -3,15 +3,8 @@ import { notFound } from "next/navigation";
 import { getModule } from "@/features/modules/service";
 import { listQuestions } from "@/features/questions/service";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableEmpty,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TableEmpty } from "@/components/ui/table";
+import { SortableQuestionsTable } from "@/components/sortable-questions-table";
 
 export default async function QuestionsListPage({
   params,
@@ -61,36 +54,16 @@ export default async function QuestionsListPage({
           </Button>
         </TableEmpty>
       ) : (
-        <div className="rounded-lg border border-border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">#</TableHead>
-                <TableHead>Question</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {questions.map((q) => (
-                <TableRow key={q.id}>
-                  <TableCell className="text-muted-foreground font-mono text-sm">
-                    {q.order}
-                  </TableCell>
-                  <TableCell className="font-medium line-clamp-2">{q.prompt}</TableCell>
-                  <TableCell className="text-right">
-                    <Button asChild size="sm" variant="outline">
-                      <Link
-                        href={`/admin/courses/${courseId}/modules/${moduleId}/questions/${q.id}/edit`}
-                      >
-                        Edit
-                      </Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <>
+          <p className="text-xs text-muted-foreground">
+            Drag a row to reorder. Changes save automatically.
+          </p>
+          <SortableQuestionsTable
+            questions={questions.map((q) => ({ id: q.id, prompt: q.prompt, order: q.order }))}
+            moduleId={moduleId}
+            courseId={courseId}
+          />
+        </>
       )}
     </div>
   );

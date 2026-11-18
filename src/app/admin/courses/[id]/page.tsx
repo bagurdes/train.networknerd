@@ -3,17 +3,8 @@ import { notFound } from "next/navigation";
 import { getCourse } from "@/features/courses/service";
 import { listModules, listUnassignedModules } from "@/features/modules/service";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableEmpty,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { DeleteModuleButton } from "./delete-module-button";
-import { UnassignModuleButton } from "./unassign-module-button";
+import { TableEmpty } from "@/components/ui/table";
+import { SortableCourseModulesTable } from "@/components/sortable-course-modules-table";
 import { AssignModuleForm } from "./assign-module-form";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -93,65 +84,21 @@ export default async function CourseDetailPage({
               <p>No modules yet. Create a new module or assign an existing one.</p>
             </TableEmpty>
           ) : (
-            <div className="rounded-lg border border-border bg-card">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">#</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead className="hidden md:table-cell">Questions</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {modules.map((mod) => (
-                    <TableRow key={mod.id}>
-                      <TableCell className="text-muted-foreground font-mono text-sm">
-                        {mod.order}
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">{mod.title}</div>
-                        <div className="text-xs text-muted-foreground line-clamp-1">
-                          {mod.description}
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {mod._count.questions}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button asChild size="sm" variant="outline">
-                            <Link href={`/admin/courses/${id}/modules/${mod.id}/questions`}>
-                              Questions ({mod._count.questions})
-                            </Link>
-                          </Button>
-                          <Button asChild size="sm" variant="outline">
-                            <Link href={`/admin/courses/${id}/modules/${mod.id}/questions/new`}>
-                              + Question
-                            </Link>
-                          </Button>
-                          <Button asChild size="sm" variant="outline">
-                            <Link href={`/admin/courses/${id}/modules/${mod.id}/edit`}>
-                              Edit
-                            </Link>
-                          </Button>
-                          <UnassignModuleButton
-                            courseId={id}
-                            moduleId={mod.id}
-                            title={mod.title}
-                          />
-                          <DeleteModuleButton
-                            id={mod.id}
-                            courseId={id}
-                            title={mod.title}
-                          />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <>
+              <p className="text-xs text-muted-foreground">
+                Drag a row to reorder. Changes save automatically.
+              </p>
+              <SortableCourseModulesTable
+                courseId={id}
+                modules={modules.map((m) => ({
+                  id: m.courseModuleId,
+                  moduleId: m.id,
+                  title: m.title,
+                  description: m.description,
+                  questionCount: m._count.questions,
+                }))}
+              />
+            </>
           )}
         </div>
 

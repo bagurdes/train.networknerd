@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { NotFoundError, ConflictError } from "@/lib/errors";
+import { NotFoundError, ConflictError, ValidationError } from "@/lib/errors";
 import type { CreateModuleInput, UpdateModuleInput } from "./schema";
 
 // List modules assigned to a course, in course order.
@@ -260,6 +260,43 @@ export async function archiveModule(id: string): Promise<void> {
     where: { id },
     data: { archivedAt: new Date() },
   });
+}
+
+/**
+ * Renumber modules within a course. `orderedIds` are CourseModule row ids
+ * (the join-table rows), not Module ids — a module can appear in multiple
+ * courses with its own order per course.
+ */
+export async function reorderCourseModules(
+  courseId: string,
+  orderedCourseModuleIds: string[],
+): Promise<void> {
+  const existing = await prisma.courseModule.findMany({
+    where: { courseId },
+    select: { id: true },
+  });
+  const existingSet = new Set(existing.map((cm) => cm.id));
+
+  if (orderedCourseModuleIds.length !== existing.length) {
+    throw new ValidationError("Reorder list length doesn't match module count");
+  }
+  const seen = new Set<string>();
+  for (const id of orderedCourseModuleIds) {
+    if (!existingSet.has(id)) throw new ValidationError("Unknown module id in reorder list");
+    if (seen.has(id)) throw new ValidationError("Duplicate module id in reorder list");
+    seen.add(id);
+  }
+
+  // Same two-phase trick as reorderQuestions: avoid the (courseId, order)
+  // unique index being violated mid-transaction.
+  await prisma.$transaction([
+    ...orderedCourseModuleIds.map((id, i) =>
+      prisma.courseModule.update({ where: { id }, data: { order: -(i + 1) } }),
+    ),
+    ...orderedCourseModuleIds.map((id, i) =>
+      prisma.courseModule.update({ where: { id }, data: { order: i + 1 } }),
+    ),
+  ]);
 }
 
 /** Restore an archived module. No-op if it's already active. */
