@@ -10,7 +10,8 @@ export function DeleteQuestionButton({
 }: {
   id: string;
   moduleId: string;
-  courseId: string;
+  /** null when deleting from a standalone module (not yet in a course). */
+  courseId: string | null;
 }) {
   async function handleDelete() {
     if (!confirm("Delete this question? This cannot be undone.")) return;

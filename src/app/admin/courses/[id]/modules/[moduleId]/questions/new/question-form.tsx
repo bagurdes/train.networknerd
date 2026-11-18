@@ -27,7 +27,8 @@ type Props =
   | {
       mode: "create";
       moduleId: string;
-      courseId: string;
+      /** null when editing a standalone module (not yet assigned to any course). */
+      courseId: string | null;
       defaultOrder: number;
       id?: never;
       initialValues?: never;
@@ -35,7 +36,7 @@ type Props =
   | {
       mode: "edit";
       moduleId: string;
-      courseId: string;
+      courseId: string | null;
       id: string;
       initialValues: QuestionFormValues;
       defaultOrder?: never;

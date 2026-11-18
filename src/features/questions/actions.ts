@@ -15,9 +15,20 @@ export interface FormState {
   fieldErrors?: Record<string, string[] | undefined>;
 }
 
+/**
+ * Where to send the admin back after a save/delete. If the request came from
+ * a course-scoped page, we keep them in that course's context; otherwise we
+ * send them to the module-scoped page (used by copies and standalone modules).
+ */
+function questionsListPath(moduleId: string, courseId: string | null): string {
+  return courseId
+    ? `/admin/courses/${courseId}/modules/${moduleId}/questions`
+    : `/admin/modules/${moduleId}/questions`;
+}
+
 export async function createQuestionAction(
   moduleId: string,
-  courseId: string,
+  courseId: string | null,
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
@@ -33,8 +44,9 @@ export async function createQuestionAction(
       order: formData.get("order") || String(nextOrder),
     });
     await createQuestion(moduleId, input);
-    revalidatePath(`/admin/courses/${courseId}/modules/${moduleId}/questions`);
-    redirect(`/admin/courses/${courseId}/modules/${moduleId}/questions`);
+    const dest = questionsListPath(moduleId, courseId);
+    revalidatePath(dest);
+    redirect(dest);
   } catch (err) {
     return toFormState(err);
   }
@@ -43,7 +55,7 @@ export async function createQuestionAction(
 export async function updateQuestionAction(
   id: string,
   moduleId: string,
-  courseId: string,
+  courseId: string | null,
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
@@ -58,8 +70,9 @@ export async function updateQuestionAction(
       order: formData.get("order"),
     });
     await updateQuestion(id, input);
-    revalidatePath(`/admin/courses/${courseId}/modules/${moduleId}/questions`);
-    redirect(`/admin/courses/${courseId}/modules/${moduleId}/questions`);
+    const dest = questionsListPath(moduleId, courseId);
+    revalidatePath(dest);
+    redirect(dest);
   } catch (err) {
     return toFormState(err);
   }
@@ -68,12 +81,13 @@ export async function updateQuestionAction(
 export async function deleteQuestionAction(
   id: string,
   moduleId: string,
-  courseId: string,
+  courseId: string | null,
 ): Promise<void> {
   await requireRole([Role.ADMIN]);
   await deleteQuestion(id);
-  revalidatePath(`/admin/courses/${courseId}/modules/${moduleId}/questions`);
-  redirect(`/admin/courses/${courseId}/modules/${moduleId}/questions`);
+  const dest = questionsListPath(moduleId, courseId);
+  revalidatePath(dest);
+  redirect(dest);
 }
 
 function toFormState(err: unknown): FormState {

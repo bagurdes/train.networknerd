@@ -31,10 +31,6 @@ export default async function StandaloneQuestionsPage({
 
   const questions = await listQuestions(moduleId);
 
-  // Use the first course this module belongs to for the question edit routes,
-  // since those routes are nested under /admin/courses/[id]/...
-  const firstCourseId = mod.courseModules[0]?.course.id;
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -46,20 +42,13 @@ export default async function StandaloneQuestionsPage({
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Questions</h1>
         </div>
-        {firstCourseId && (
-          <Button asChild>
-            <Link href={`/admin/courses/${firstCourseId}/modules/${moduleId}/questions/new`}>
-              Add question
-            </Link>
-          </Button>
-        )}
+        {/* Module-scoped route — works whether the module is in a course or not. */}
+        <Button asChild>
+          <Link href={`/admin/modules/${moduleId}/questions/new`}>
+            Add question
+          </Link>
+        </Button>
       </div>
-
-      {!firstCourseId && (
-        <p className="text-sm text-muted-foreground">
-          This module isn&apos;t assigned to any course yet. Assign it to a course to add questions.
-        </p>
-      )}
 
       {questions.length === 0 ? (
         <TableEmpty>
@@ -85,15 +74,11 @@ export default async function StandaloneQuestionsPage({
                     <span className="line-clamp-2 whitespace-pre-wrap">{q.prompt}</span>
                   </TableCell>
                   <TableCell className="text-right">
-                    {firstCourseId && (
-                      <Button asChild size="sm" variant="outline">
-                        <Link
-                          href={`/admin/courses/${firstCourseId}/modules/${moduleId}/questions/${q.id}/edit`}
-                        >
-                          Edit
-                        </Link>
-                      </Button>
-                    )}
+                    <Button asChild size="sm" variant="outline">
+                      <Link href={`/admin/modules/${moduleId}/questions/${q.id}/edit`}>
+                        Edit
+                      </Link>
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
