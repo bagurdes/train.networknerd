@@ -20,6 +20,12 @@ const UTILITIES = [
     description:
       "Pick one or more modules and get a combined questions file and/or answer-key file for printing or handoff.",
   },
+  {
+    href: "/admin/utilities/move-questions",
+    title: "Move or Copy Questions Between Modules",
+    description:
+      "Reorganize questions: select questions in one module and move or copy them into another module (or a brand-new one).",
+  },
 ] as const;
 
 export default function UtilitiesIndex() {

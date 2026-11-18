@@ -263,6 +263,64 @@ export async function archiveModule(id: string): Promise<void> {
 }
 
 /**
+ * Create a brand-new standalone module (not attached to any course).
+ * Used by the move/copy utility when the admin picks "New module" as the
+ * destination. The caller assigns it to a course afterward, if desired.
+ */
+export async function createStandaloneModule(input: {
+  title: string;
+  description: string;
+}) {
+  return prisma.module.create({
+    data: {
+      title: input.title,
+      description: input.description.trim() || "Created via the move/copy utility.",
+      isPublic: false,
+    },
+    select: { id: true, title: true },
+  });
+}
+
+/**
+ * Modules eligible as a MOVE source or as any destination (move or copy):
+ * active, and not assigned to any course.
+ */
+export async function listMutableModules() {
+  return prisma.module.findMany({
+    where: {
+      archivedAt: null,
+      courseModules: { none: {} },
+    },
+    orderBy: { title: "asc" },
+    select: {
+      id: true,
+      title: true,
+      _count: { select: { questions: true } },
+    },
+  });
+}
+
+/**
+ * All modules for the source picker on the move/copy utility: every module,
+ * with the info needed to decide whether it's valid as a MOVE source
+ * (archived + course assignments) or only as a COPY source.
+ */
+export async function listModulesForMoveSourcePicker() {
+  return prisma.module.findMany({
+    orderBy: [{ archivedAt: "asc" }, { title: "asc" }],
+    select: {
+      id: true,
+      title: true,
+      archivedAt: true,
+      _count: { select: { questions: true } },
+      courseModules: {
+        select: { course: { select: { id: true, title: true } } },
+      },
+    },
+  });
+}
+
+/**
  * Renumber modules within a course. `orderedIds` are CourseModule row ids
  * (the join-table rows), not Module ids — a module can appear in multiple
  * courses with its own order per course.

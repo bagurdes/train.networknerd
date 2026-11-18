@@ -8,12 +8,15 @@ import { requireRole } from "@/lib/authorize";
 import { AppError } from "@/lib/errors";
 import { createQuestionSchema, updateQuestionSchema } from "./schema";
 import {
+  copyQuestions,
   createQuestion,
   deleteQuestion,
   getNextQuestionOrder,
+  moveQuestions,
   reorderQuestions,
   updateQuestion,
 } from "./service";
+import { createStandaloneModule } from "@/features/modules/service";
 
 export interface FormState {
   ok?: boolean;
@@ -94,6 +97,73 @@ export async function deleteQuestionAction(
   const dest = questionsListPath(moduleId, courseId);
   revalidatePath(dest);
   redirect(dest);
+}
+
+/**
+ * Move or copy selected questions from a source module to a destination.
+ * The destination is either an existing module id or a brand-new standalone
+ * module created on the fly.
+ */
+export async function moveOrCopyQuestionsAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  try {
+    await requireRole([Role.ADMIN]);
+
+    const operation = formData.get("operation");
+    const sourceModuleId = formData.get("sourceModuleId");
+    const destinationKind = formData.get("destinationKind");
+    const questionIds = formData.getAll("questionIds").filter((v): v is string => typeof v === "string");
+
+    if (operation !== "move" && operation !== "copy") {
+      return { error: "Invalid operation" };
+    }
+    if (typeof sourceModuleId !== "string" || !sourceModuleId) {
+      return { error: "Source module missing" };
+    }
+    if (questionIds.length === 0) {
+      return { error: "Select at least one question" };
+    }
+
+    let destinationModuleId: string;
+    let destinationTitle: string | null = null;
+
+    if (destinationKind === "new") {
+      const title = (formData.get("newModuleTitle") as string | null)?.trim() ?? "";
+      const description = (formData.get("newModuleDescription") as string | null)?.trim() ?? "";
+      if (!title) return { fieldErrors: { newModuleTitle: ["New module title is required"] } };
+      const newMod = await createStandaloneModule({ title, description });
+      destinationModuleId = newMod.id;
+      destinationTitle = newMod.title;
+    } else if (destinationKind === "existing") {
+      const existingId = formData.get("destinationModuleId");
+      if (typeof existingId !== "string" || !existingId) {
+        return { fieldErrors: { destinationModuleId: ["Choose a destination module"] } };
+      }
+      destinationModuleId = existingId;
+    } else {
+      return { error: "Choose a destination" };
+    }
+
+    if (operation === "move") {
+      await moveQuestions(sourceModuleId, questionIds, destinationModuleId);
+    } else {
+      await copyQuestions(sourceModuleId, questionIds, destinationModuleId);
+    }
+
+    revalidatePath("/admin/utilities/move-questions");
+    const params = new URLSearchParams({
+      source: sourceModuleId,
+      done: operation,
+      dest: destinationModuleId,
+      count: String(questionIds.length),
+    });
+    if (destinationTitle) params.set("destTitle", destinationTitle);
+    redirect(`/admin/utilities/move-questions?${params.toString()}`);
+  } catch (err) {
+    return toFormState(err);
+  }
 }
 
 /**
