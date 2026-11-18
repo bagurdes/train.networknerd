@@ -102,3 +102,52 @@ export async function buildAnswerKeyFile(moduleId: string): Promise<{ filename: 
 function sanitize(name: string): string {
   return name.trim().replace(/[^a-zA-Z0-9 _-]/g, "").replace(/\s+/g, "_");
 }
+
+// ---------------------------------------------------------------------------
+// Bulk exports — one combined file for N selected modules.
+// ---------------------------------------------------------------------------
+
+/**
+ * Builds a single Questions file containing every requested module in order.
+ * Order follows the order of `moduleIds` (which should be the order the admin
+ * saw on screen).
+ */
+export async function buildQuestionsBundleFile(
+  moduleIds: string[],
+): Promise<{ filename: string; content: string }> {
+  if (moduleIds.length === 0) {
+    throw new NotFoundError("Select at least one module to export");
+  }
+  const parts: string[] = [];
+  for (const id of moduleIds) {
+    const file = await buildQuestionsFile(id);
+    parts.push(file.content);
+  }
+  return {
+    filename: bundleFilename(moduleIds.length, "questions"),
+    content: parts.join("\n" + PAGE_BREAK + "\n"),
+  };
+}
+
+export async function buildAnswerKeysBundleFile(
+  moduleIds: string[],
+): Promise<{ filename: string; content: string }> {
+  if (moduleIds.length === 0) {
+    throw new NotFoundError("Select at least one module to export");
+  }
+  const parts: string[] = [];
+  for (const id of moduleIds) {
+    const file = await buildAnswerKeyFile(id);
+    parts.push(file.content);
+  }
+  return {
+    filename: bundleFilename(moduleIds.length, "answers"),
+    content: parts.join("\n" + PAGE_BREAK + "\n"),
+  };
+}
+
+function bundleFilename(count: number, kind: "questions" | "answers"): string {
+  const stamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const label = kind === "questions" ? "questions" : "answer-keys";
+  return `network-nerd-${label}-${count}-modules-${stamp}.txt`;
+}

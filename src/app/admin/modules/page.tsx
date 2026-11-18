@@ -131,22 +131,12 @@ export default async function AdminModulesPage({
                   <TableCell className="text-right">
                     <div className="flex flex-wrap items-center justify-end gap-2">
                       <Button asChild size="sm" variant="outline">
-                        <a href={`/api/modules/${mod.id}/export?type=questions`}>
-                          ⬇ Questions
-                        </a>
-                      </Button>
-                      <Button asChild size="sm" variant="outline">
-                        <a href={`/api/modules/${mod.id}/export?type=answers`}>
-                          ⬇ Answer key
-                        </a>
-                      </Button>
-                      <Button asChild size="sm" variant="outline">
                         <Link href={`/admin/modules/${mod.id}/questions`}>
-                          Questions ({mod._count.questions})
+                          Edit Questions ({mod._count.questions})
                         </Link>
                       </Button>
                       <Button asChild size="sm" variant="outline">
-                        <Link href={`/admin/modules/${mod.id}/edit`}>Edit</Link>
+                        <Link href={`/admin/modules/${mod.id}/edit`}>Edit Module</Link>
                       </Button>
                       <ModuleRowActions
                         id={mod.id}

@@ -55,6 +55,7 @@ function RoleNav({ role }: { role: Role }) {
           { href: "/admin/courses", label: "Courses" },
           { href: "/admin/classes", label: "Classes" },
           { href: "/admin/users", label: "Users" },
+          { href: "/admin/utilities", label: "Utilities" },
         ]
       : role === "INSTRUCTOR"
         ? [{ href: "/classes", label: "My classes" }]
