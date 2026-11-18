@@ -301,23 +301,40 @@ export async function listMutableModules() {
 }
 
 /**
- * All modules for the source picker on the move/copy utility: every module,
- * with the info needed to decide whether it's valid as a MOVE source
- * (archived + course assignments) or only as a COPY source.
+ * Source picker for the move/copy utility, bucketed into the three tabs the
+ * UI shows: Unassigned (no course, not archived — the primary workspace),
+ * Active (in a course, not archived — copy-only), and Archived (copy-only).
  */
-export async function listModulesForMoveSourcePicker() {
-  return prisma.module.findMany({
-    orderBy: [{ archivedAt: "asc" }, { title: "asc" }],
-    select: {
-      id: true,
-      title: true,
-      archivedAt: true,
-      _count: { select: { questions: true } },
-      courseModules: {
-        select: { course: { select: { id: true, title: true } } },
-      },
+export async function listModulesForMoveSourcePickerTabbed() {
+  const select = {
+    id: true,
+    title: true,
+    archivedAt: true,
+    _count: { select: { questions: true } },
+    courseModules: {
+      select: { course: { select: { id: true, title: true } } },
     },
-  });
+  } as const;
+
+  const [unassigned, active, archived] = await Promise.all([
+    prisma.module.findMany({
+      where: { archivedAt: null, courseModules: { none: {} } },
+      orderBy: { title: "asc" },
+      select,
+    }),
+    prisma.module.findMany({
+      where: { archivedAt: null, courseModules: { some: {} } },
+      orderBy: { title: "asc" },
+      select,
+    }),
+    prisma.module.findMany({
+      where: { archivedAt: { not: null } },
+      orderBy: { title: "asc" },
+      select,
+    }),
+  ]);
+
+  return { unassigned, active, archived };
 }
 
 /**

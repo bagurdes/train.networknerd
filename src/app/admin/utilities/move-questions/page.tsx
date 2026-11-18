@@ -2,48 +2,106 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import {
-  listModulesForMoveSourcePicker,
+  listModulesForMoveSourcePickerTabbed,
   listMutableModules,
 } from "@/features/modules/service";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableEmpty,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { ManageForm } from "./manage-form";
 
 export const metadata = { title: "Move / Copy Questions · Utilities · Admin" };
 
-/**
- * Two-mode page:
- *   - No ?source — admin picks the module to work on (SOURCE picker)
- *   - ?source=<id> — shows that module's questions + destination + actions
- *
- * Success is communicated via extra query params: ?done=move|copy&dest=&count=
- * which a small banner at the top of the page reads and displays.
- */
+type TabKey = "unassigned" | "active" | "archive";
+
+function parseTab(view: string | undefined): TabKey {
+  if (view === "active" || view === "archive") return view;
+  return "unassigned";
+}
+
 export default async function MoveQuestionsPage({
   searchParams,
 }: {
   searchParams: Promise<{
     source?: string;
+    view?: string;
     done?: string;
     dest?: string;
     destTitle?: string;
     count?: string;
   }>;
 }) {
-  const { source, done, dest, destTitle, count } = await searchParams;
+  const { source, view, done, dest, destTitle, count } = await searchParams;
 
-  const allSourceCandidates = await listModulesForMoveSourcePicker();
-
+  // --- No source selected: show the tabbed source picker ------------------
   if (!source) {
+    const activeTab = parseTab(view);
+    const buckets = await listModulesForMoveSourcePickerTabbed();
+
     return (
-      <PickSourceView
-        modules={allSourceCandidates}
-        successBanner={buildSuccessBanner({ done, dest, destTitle, count })}
-      />
+      <div className="space-y-6">
+        <div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+            <Link href="/admin/utilities" className="hover:text-foreground">
+              Utilities
+            </Link>
+            <span>/</span>
+            <span>Move / Copy Questions</span>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Move or Copy Questions
+          </h1>
+          <p className="text-muted-foreground">
+            Unassigned modules are the primary workspace — you can both move and
+            copy questions out of them. Active and archived modules are
+            copy-only.
+          </p>
+        </div>
+
+        {buildSuccessBanner({ done, dest, destTitle, count })}
+
+        <div className="flex gap-1 border-b border-border">
+          <TabLink href="/admin/utilities/move-questions" active={activeTab === "unassigned"}>
+            Unassigned{" "}
+            <Count>({buckets.unassigned.length})</Count>
+          </TabLink>
+          <TabLink
+            href="/admin/utilities/move-questions?view=active"
+            active={activeTab === "active"}
+          >
+            Active <Count>({buckets.active.length})</Count>
+          </TabLink>
+          <TabLink
+            href="/admin/utilities/move-questions?view=archive"
+            active={activeTab === "archive"}
+          >
+            Archive <Count>({buckets.archived.length})</Count>
+          </TabLink>
+        </div>
+
+        <PickerTable
+          tab={activeTab}
+          modules={
+            activeTab === "unassigned"
+              ? buckets.unassigned
+              : activeTab === "active"
+                ? buckets.active
+                : buckets.archived
+          }
+        />
+      </div>
     );
   }
 
-  // Source selected — fetch it and the eligible destinations.
+  // --- Source selected: show questions + destination + action form --------
   const sourceModule = await prisma.module.findUnique({
     where: { id: source },
     select: {
@@ -59,11 +117,9 @@ export default async function MoveQuestionsPage({
       },
     },
   });
-
   if (!sourceModule) notFound();
 
   const mutable = await listMutableModules();
-  // Destination dropdown: exclude the source itself.
   const destinations = mutable.filter((m) => m.id !== sourceModule.id);
 
   const courseAssignments = sourceModule.courseModules.map((cm) => cm.course.title);
@@ -79,9 +135,7 @@ export default async function MoveQuestionsPage({
   return (
     <div className="space-y-6">
       <Breadcrumbs sourceTitle={sourceModule.title} />
-      <h1 className="text-2xl font-bold tracking-tight">
-        Move or Copy Questions
-      </h1>
+      <h1 className="text-2xl font-bold tracking-tight">Move or Copy Questions</h1>
 
       {buildSuccessBanner({ done, dest, destTitle, count })}
 
@@ -118,61 +172,89 @@ export default async function MoveQuestionsPage({
   );
 }
 
-// ---- Sub-views -------------------------------------------------------------
+// ---- Picker table (shared for all three tabs) ------------------------------
 
-function PickSourceView({
+type PickerRow = {
+  id: string;
+  title: string;
+  archivedAt: Date | null;
+  _count: { questions: number };
+  courseModules: { course: { id: string; title: string } }[];
+};
+
+function PickerTable({
+  tab,
   modules,
-  successBanner,
 }: {
-  modules: Awaited<ReturnType<typeof listModulesForMoveSourcePicker>>;
-  successBanner: React.ReactNode;
+  tab: TabKey;
+  modules: PickerRow[];
 }) {
+  if (modules.length === 0) {
+    return (
+      <TableEmpty>
+        {tab === "unassigned" && (
+          <p>
+            No unassigned modules — every active module is in a course. Copy a
+            module from the Modules page to get an editable workspace.
+          </p>
+        )}
+        {tab === "active" && <p>No modules are currently assigned to a course.</p>}
+        {tab === "archive" && <p>No archived modules.</p>}
+      </TableEmpty>
+    );
+  }
+
+  const copyOnly = tab !== "unassigned";
+
   return (
-    <div className="space-y-6">
-      <div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-          <Link href="/admin/utilities" className="hover:text-foreground">
-            Utilities
-          </Link>
-          <span>/</span>
-          <span>Move / Copy Questions</span>
-        </div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          Move or Copy Questions
-        </h1>
-        <p className="text-muted-foreground">
-          Pick a module to work on. You&rsquo;ll then choose questions to move
-          or copy into another module.
-        </p>
-      </div>
-
-      {successBanner}
-
-      {modules.length === 0 ? (
-        <p className="text-muted-foreground">No modules exist yet.</p>
-      ) : (
-        <div className="rounded-lg border border-border bg-card divide-y divide-border">
-          {modules.map((m) => {
-            const inCourses = m.courseModules.map((cm) => cm.course.title);
-            const archived = !!m.archivedAt;
-            return (
-              <div key={m.id} className="flex items-center gap-4 px-4 py-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium truncate">{m.title}</span>
-                    {archived && <Badge tone="muted">Archived</Badge>}
-                    {inCourses.length > 0 && (
-                      <Badge tone="warning">In: {inCourses.join(", ")}</Badge>
-                    )}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {m._count.questions} question
-                    {m._count.questions === 1 ? "" : "s"}
-                    {(archived || inCourses.length > 0) && (
-                      <> · Copy only — can&rsquo;t move questions out</>
-                    )}
-                  </div>
+    <div className="rounded-lg border border-border bg-card">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Title &amp; assigned courses</TableHead>
+            <TableHead className="hidden md:table-cell">Questions</TableHead>
+            <TableHead className="text-right">Action</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {modules.map((m) => (
+            <TableRow key={m.id}>
+              <TableCell className="font-medium">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span>{m.title}</span>
+                  {m.archivedAt && (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                      Archived
+                    </span>
+                  )}
                 </div>
+                {m.courseModules.length > 0 ? (
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {m.courseModules.map((cm) => (
+                      <Link
+                        key={cm.course.id}
+                        href={`/admin/courses/${cm.course.id}`}
+                        className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary hover:bg-primary/20"
+                      >
+                        {cm.course.title}
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-1.5 text-xs text-muted-foreground">
+                    Not assigned to any course
+                  </div>
+                )}
+                {copyOnly && (
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    Copy only — can&rsquo;t move questions out
+                  </div>
+                )}
+              </TableCell>
+              <TableCell className="hidden md:table-cell">
+                {m._count.questions}
+              </TableCell>
+              <TableCell className="text-right">
                 <Button asChild size="sm">
                   <Link
                     href={`/admin/utilities/move-questions?source=${m.id}`}
@@ -180,13 +262,43 @@ function PickSourceView({
                     Work on this module
                   </Link>
                 </Button>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
+}
+
+// ---- Small presentational helpers -----------------------------------------
+
+function TabLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "-mb-px rounded-t-md border-b-2 px-4 py-2 text-sm font-medium transition-colors",
+        active
+          ? "border-primary text-foreground"
+          : "border-transparent text-muted-foreground hover:text-foreground",
+      )}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function Count({ children }: { children: React.ReactNode }) {
+  return <span className="ml-1 text-xs text-muted-foreground">{children}</span>;
 }
 
 function Breadcrumbs({ sourceTitle }: { sourceTitle: string }) {
@@ -196,10 +308,7 @@ function Breadcrumbs({ sourceTitle }: { sourceTitle: string }) {
         Utilities
       </Link>
       <span>/</span>
-      <Link
-        href="/admin/utilities/move-questions"
-        className="hover:text-foreground"
-      >
+      <Link href="/admin/utilities/move-questions" className="hover:text-foreground">
         Move / Copy Questions
       </Link>
       <span>/</span>
@@ -232,35 +341,21 @@ function SourceSummary({
           Source module
         </span>
         <span className="font-medium">{title}</span>
-        {archived && <Badge tone="muted">Archived</Badge>}
+        {archived && (
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+            Archived
+          </span>
+        )}
         {courses.length > 0 && (
-          <Badge tone="warning">In: {courses.join(", ")}</Badge>
+          <span className="rounded-full bg-secondary/20 px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+            In: {courses.join(", ")}
+          </span>
         )}
       </div>
       <div className="text-xs text-muted-foreground">
         {questionCount} question{questionCount === 1 ? "" : "s"}
       </div>
     </div>
-  );
-}
-
-function Badge({
-  tone,
-  children,
-}: {
-  tone: "muted" | "warning";
-  children: React.ReactNode;
-}) {
-  return (
-    <span
-      className={cn(
-        "rounded-full px-2 py-0.5 text-xs font-medium",
-        tone === "muted" && "bg-muted text-muted-foreground",
-        tone === "warning" && "bg-secondary/20 text-secondary-foreground",
-      )}
-    >
-      {children}
-    </span>
   );
 }
 
@@ -278,7 +373,9 @@ function buildSuccessBanner({
   if (!done || !dest || !count) return null;
   const verb = done === "move" ? "Moved" : "Copied";
   const n = Number.parseInt(count, 10);
-  const nDisplay = Number.isFinite(n) ? `${n} question${n === 1 ? "" : "s"}` : "questions";
+  const nDisplay = Number.isFinite(n)
+    ? `${n} question${n === 1 ? "" : "s"}`
+    : "questions";
   const destLabel = destTitle ? ` to "${destTitle}"` : "";
   return (
     <div className="rounded-lg border border-accent bg-accent/10 px-4 py-3 text-sm text-accent-foreground">
